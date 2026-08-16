@@ -52,6 +52,7 @@ function BattleManager:Init(config)
     local CollisionSystem = require "Game.Battle.CollisionSystem"
     local DamageSystem = require "Game.Battle.DamageSystem"
 
+    -- 1. 创建所有 System
     self.playerController = PlayerController.New()
     self.weaponSystem = WeaponSystem.New()
     self.bulletManager = BulletManager.New()
@@ -61,27 +62,25 @@ function BattleManager:Init(config)
     self.collisionSystem = CollisionSystem.New()
     self.damageSystem = DamageSystem.New()
 
-    -- 初始化数据系统
+    -- 2. 初始化基础 System
     self.playerController:Init(config.player)
-
     self.enemyManager:Init()
-
     self.bulletManager:Init()
 
-    -- 注入依赖
-    self.bulletManager:Inject(
-        self.enemyManager
-    )
+    -- 3. 注入相互依赖
+    self.bulletManager:Inject(self.enemyManager)
 
-    self.weaponSystem:Init(
-        self.playerController
-    )
-
+    self.weaponSystem:Init(self.playerController)
     self.weaponSystem:Inject(
         self.bulletManager,
         self.enemyManager
     )
 
+    self.enemyManager:SetOnEnemyKilled(function(enemyId)
+        self:OnEnemyKilled(enemyId)
+    end)
+
+    -- 4. 初始化高层 System
     self.spawnSystem:Init(
         config.waves,
         self.enemyManager
@@ -103,6 +102,7 @@ function BattleManager:Init(config)
         self.damageSystem
     )
 
+    -- 5. 进入 Loading，等待外部 Start()
     self:_setPhase(BattleManager.Phase.Loading)
 end
 
@@ -129,39 +129,49 @@ function BattleManager:Update(dt)
         return
     end
 
+    if not self.playerController
+        or not self.weaponSystem
+        or not self.bulletManager
+        or not self.enemyManager
+        or not self.spawnSystem
+        or not self.buffSystem
+        or not self.collisionSystem
+        or not self.damageSystem then
+        return
+    end
+
     self.elapsedTime = self.elapsedTime + dt
 
-    -- 1. 玩家
+    -- 1. 玩家输入 + 移动
     self.playerController:Update(dt)
 
-    -- 2. Buff
-    self.buffSystem:Update(dt)
+    -- 2. 武器自动攻击
+    self.weaponSystem:Update(dt)
 
-    -- 3. 刷怪
-    self.spawnSystem:Update(
-        dt,
-        self.elapsedTime
-    )
+    -- 3. 子弹移动
+    self.bulletManager:Update(dt)
 
-    -- 4. 敌人
+    -- 4. 敌人 AI + 移动
     local px, py = self.playerController:GetPosition()
-
     self.enemyManager:Update(
         dt,
         px,
         py
     )
 
-    -- 5. 武器
-    self.weaponSystem:Update(dt)
+    -- 5. 刷怪
+    self.spawnSystem:Update(
+        dt,
+        self.elapsedTime
+    )
 
-    -- 6. 子弹
-    self.bulletManager:Update(dt)
+    -- 6. Buff 计时
+    self.buffSystem:Update(dt)
 
     -- 7. 统一碰撞
     self.collisionSystem:Update(dt)
 
-    -- 8. 清理
+    -- 8. 延迟清理
     self.enemyManager:Cleanup()
     self.bulletManager:Cleanup()
 
@@ -170,22 +180,22 @@ function BattleManager:Update(dt)
 end
 
 function BattleManager:_checkEndCondition()
+    if self.phase ~= BattleManager.Phase.Running then
+        return
+    end
+
     if self.elapsedTime >= self.maxTime then
-        if self.phase == BattleManager.Phase.Running then
-            self:_setPhase(BattleManager.Phase.Victory)
-            if self.onBattleEnd then
-                self.onBattleEnd(true, self.killCount, self.elapsedTime)
-            end
+        self:_setPhase(BattleManager.Phase.Victory)
+        if self.onBattleEnd then
+            self.onBattleEnd(true, self.killCount, self.elapsedTime)
         end
         return
     end
 
     if self.playerController:IsDead() then
-        if self.phase == BattleManager.Phase.Running then
-            self:_setPhase(BattleManager.Phase.Defeat)
-            if self.onBattleEnd then
-                self.onBattleEnd(false, self.killCount, self.elapsedTime)
-            end
+        self:_setPhase(BattleManager.Phase.Defeat)
+        if self.onBattleEnd then
+            self.onBattleEnd(false, self.killCount, self.elapsedTime)
         end
     end
 end
@@ -241,6 +251,10 @@ function BattleManager:GetStats()
 end
 
 function BattleManager:Destroy()
+    if self.enemyManager then
+        self.enemyManager:SetOnEnemyKilled(nil)
+    end
+
     if self.playerController then
         self.playerController:Destroy()
     end
@@ -281,6 +295,8 @@ function BattleManager:Destroy()
     self.buffSystem = nil
     self.collisionSystem = nil
     self.damageSystem = nil
+
+    self.phase = BattleManager.Phase.None
 end
 
 return BattleManager
