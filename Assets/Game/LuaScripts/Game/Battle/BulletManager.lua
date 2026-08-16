@@ -7,7 +7,6 @@ function BulletManager:Ctor()
     self.bullets = {}
     self._pendingRemove = {}
     self._pool = nil
-
     self.enemyManager = nil
 end
 
@@ -33,7 +32,6 @@ function BulletManager:Init()
                 _remove = false,
             }
         end,
-
         function(b)
             b.x = 0
             b.y = 0
@@ -52,7 +50,6 @@ function BulletManager:Init()
                 b.hitIds[k] = nil
             end
         end,
-
         32,
         256
     )
@@ -88,11 +85,7 @@ function BulletManager:SpawnBullet(config)
         bullet.hitIds[k] = nil
     end
 
-    table.insert(
-        self.bullets,
-        bullet
-    )
-
+    table.insert(self.bullets, bullet)
     return bullet
 end
 
@@ -100,15 +93,9 @@ function BulletManager:Update(dt)
     for _, bullet in ipairs(self.bullets) do
         if not bullet._remove then
             local moveDist = bullet.speed * dt
-
-            bullet.x = bullet.x +
-                bullet.dirX * moveDist
-
-            bullet.y = bullet.y +
-                bullet.dirY * moveDist
-
-            bullet.traveled =
-                bullet.traveled + moveDist
+            bullet.x = bullet.x + bullet.dirX * moveDist
+            bullet.y = bullet.y + bullet.dirY * moveDist
+            bullet.traveled = bullet.traveled + moveDist
 
             if bullet.traveled >= bullet.range then
                 self:Remove(bullet)
@@ -123,11 +110,7 @@ function BulletManager:Remove(bullet)
     end
 
     bullet._remove = true
-
-    table.insert(
-        self._pendingRemove,
-        bullet
-    )
+    self._pendingRemove[#self._pendingRemove + 1] = bullet
 end
 
 function BulletManager:Cleanup()
@@ -138,14 +121,10 @@ function BulletManager:Cleanup()
     for _, bullet in ipairs(self._pendingRemove) do
         for i = #self.bullets, 1, -1 do
             if self.bullets[i] == bullet then
-                table.remove(
-                    self.bullets,
-                    i
-                )
+                table.remove(self.bullets, i)
                 break
             end
         end
-
         self._pool:Release(bullet)
     end
 
@@ -170,6 +149,7 @@ function BulletManager:Destroy()
     end
 
     self._pool = nil
+    self.enemyManager = nil
 end
 
 return BulletManager

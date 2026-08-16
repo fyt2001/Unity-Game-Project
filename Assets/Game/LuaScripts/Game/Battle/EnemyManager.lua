@@ -1,6 +1,6 @@
 --[[
 =============================================================================
-EnemyManager.lua V1.1
+EnemyManager.lua V1.1.2
 =============================================================================
 Module:     Game/Battle/EnemyManager
 Version:    1.1.3
@@ -24,9 +24,7 @@ Changelog V1.1.3:
 ]]
 
 local Class = require "Framework.Core.Class"
-
 local EnemyManager = Class.Define("EnemyManager")
-
 local GRID_SIZE = 5
 
 function EnemyManager:Ctor()
@@ -34,7 +32,6 @@ function EnemyManager:Ctor()
     self._enemyMap = {}
     self._idCounter = 0
     self._pendingRemove = {}
-
     self._grid = {}
     self.onEnemyKilled = nil
 end
@@ -58,6 +55,7 @@ function EnemyManager:SpawnEnemy(config)
     config = config or {}
 
     self._idCounter = self._idCounter + 1
+
     local enemy = {
         id = self._idCounter,
         x = config.x or 0,
@@ -85,6 +83,8 @@ end
 
 function EnemyManager:Update(dt, targetX, targetY)
     self:_flushRemoved()
+    targetX = targetX or 0
+    targetY = targetY or 0
 
     for _, enemy in ipairs(self.enemies) do
         if not enemy.isDead then
@@ -118,7 +118,6 @@ function EnemyManager:_updateEnemy(enemy, dt, targetX, targetY)
 
     local newGridX = math.floor(enemy.x / GRID_SIZE)
     local newGridY = math.floor(enemy.y / GRID_SIZE)
-
     if oldGridX ~= newGridX or oldGridY ~= newGridY then
         self:_removeFromGrid(enemy, oldGridX, oldGridY)
         self:_addToGrid(enemy, newGridX, newGridY)
@@ -138,8 +137,7 @@ function EnemyManager:TakeDamage(enemyId, damage, isCrit)
         return false
     end
 
-    enemy.hp = enemy.hp - damage
-
+    enemy.hp = enemy.hp - math.max(0, damage or 0)
     if enemy.hp <= 0 then
         enemy.hp = 0
         enemy.isDead = true
@@ -155,14 +153,12 @@ function EnemyManager:TakeDamage(enemyId, damage, isCrit)
 
         return true
     end
-
     return false
 end
 
 function EnemyManager:GetEnemiesInRange(x, y, range, maxCount)
     local result = {}
     local rangeSq = range * range
-
     local minGX = math.floor((x - range) / GRID_SIZE)
     local maxGX = math.floor((x + range) / GRID_SIZE)
     local minGY = math.floor((y - range) / GRID_SIZE)
@@ -170,8 +166,7 @@ function EnemyManager:GetEnemiesInRange(x, y, range, maxCount)
 
     for gx = minGX, maxGX do
         for gy = minGY, maxGY do
-            local key = gx .. "_" .. gy
-            local cell = self._grid[key]
+            local cell = self._grid[gx .. "_" .. gy]
             if cell then
                 for _, enemy in ipairs(cell) do
                     if not enemy.isDead then
@@ -179,16 +174,13 @@ function EnemyManager:GetEnemiesInRange(x, y, range, maxCount)
                         local dy = enemy.y - y
                         if dx * dx + dy * dy <= rangeSq then
                             result[#result + 1] = enemy
-                            if maxCount and #result >= maxCount then
-                                return result
-                            end
+                            if maxCount and #result >= maxCount then return result end
                         end
                     end
                 end
             end
         end
     end
-
     return result
 end
 
@@ -244,25 +236,22 @@ end
 function EnemyManager:GetNearestEnemy(x, y, exclude)
     local excludeSet = {}
     if exclude then
-        for _, e in ipairs(exclude) do
-            excludeSet[e.id] = true
-        end
+        for _, enemy in ipairs(exclude) do excludeSet[enemy.id] = true end
     end
 
     local centerGX = math.floor(x / GRID_SIZE)
     local centerGY = math.floor(y / GRID_SIZE)
-
     local nearest = nil
     local minDistSq = math.huge
     local searchComplete = false
 
     local maxRadius = 10
+
     for radius = 0, maxRadius do
         for dgx = -radius, radius do
             for dgy = -radius, radius do
                 if radius == 0 or math.abs(dgx) == radius or math.abs(dgy) == radius then
-                    local key = (centerGX + dgx) .. "_" .. (centerGY + dgy)
-                    local cell = self._grid[key]
+                    local cell = self._grid[(centerGX + dgx) .. "_" .. (centerGY + dgy)]
                     if cell then
                         for _, enemy in ipairs(cell) do
                             if not enemy.isDead and not excludeSet[enemy.id] then
@@ -311,7 +300,6 @@ function EnemyManager:GetNearestEnemy(x, y, exclude)
             end
         end
     end
-
     return nearest
 end
 
@@ -322,7 +310,6 @@ function EnemyManager:GetNearestEnemies(x, y, count)
 
     local centerGX = math.floor(x / GRID_SIZE)
     local centerGY = math.floor(y / GRID_SIZE)
-
     local topN = {}
     local topNCount = 0
 
@@ -330,18 +317,16 @@ function EnemyManager:GetNearestEnemies(x, y, count)
         if topNCount < count then
             topNCount = topNCount + 1
             topN[topNCount] = { enemy = enemy, distSq = distSq }
-            local i = topNCount
-            while i > 1 and topN[i].distSq < topN[i - 1].distSq do
-                topN[i], topN[i - 1] = topN[i - 1], topN[i]
-                i = i - 1
-            end
-        elseif distSq < topN[topNCount].distSq then
+        elseif distSq >= topN[topNCount].distSq then
+            return
+        else
             topN[topNCount] = { enemy = enemy, distSq = distSq }
-            local i = topNCount
-            while i > 1 and topN[i].distSq < topN[i - 1].distSq do
-                topN[i], topN[i - 1] = topN[i - 1], topN[i]
-                i = i - 1
-            end
+        end
+
+        local i = topNCount
+        while i > 1 and topN[i].distSq < topN[i - 1].distSq do
+            topN[i], topN[i - 1] = topN[i - 1], topN[i]
+            i = i - 1
         end
     end
 
@@ -396,9 +381,7 @@ function EnemyManager:GetNearestEnemies(x, y, count)
     end
 
     local result = {}
-    for i = 1, topNCount do
-        result[#result + 1] = topN[i].enemy
-    end
+    for i = 1, topNCount do result[i] = topN[i].enemy end
     return result
 end
 
@@ -415,9 +398,7 @@ end
 function EnemyManager:GetAllAlive()
     local result = {}
     for _, enemy in ipairs(self.enemies) do
-        if not enemy.isDead then
-            result[#result + 1] = enemy
-        end
+        if not enemy.isDead then result[#result + 1] = enemy end
     end
     return result
 end
@@ -459,7 +440,7 @@ function EnemyManager:_removeFromGrid(enemy, gx, gy)
     local cell = self._grid[key]
     if cell then
         for i = #cell, 1, -1 do
-            if cell[i].id == enemy.id then
+            if cell[i] == enemy then
                 table.remove(cell, i)
                 break
             end
@@ -481,9 +462,7 @@ function EnemyManager:_flushRemoved()
     end
 
     local removeSet = {}
-    for _, id in ipairs(self._pendingRemove) do
-        removeSet[id] = true
-    end
+    for _, id in ipairs(self._pendingRemove) do removeSet[id] = true end
 
     local alive = {}
     for _, enemy in ipairs(self.enemies) do

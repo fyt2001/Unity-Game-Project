@@ -103,10 +103,9 @@ function WeaponSystem:Update(dt)
 
     for _, weapon in ipairs(self.weapons) do
         self._attackTimers[weapon.id] = self._attackTimers[weapon.id] + dt
+        local effectiveInterval = math.max(0.01, weapon.interval / atkSpeedMult)
 
-        local effectiveInterval = weapon.interval / atkSpeedMult
-
-        if self._attackTimers[weapon.id] >= effectiveInterval then
+        while self._attackTimers[weapon.id] >= effectiveInterval do
             self._attackTimers[weapon.id] = self._attackTimers[weapon.id] - effectiveInterval
             self:_executeAttack(weapon)
         end
@@ -118,19 +117,17 @@ function WeaponSystem:_executeAttack(weapon)
     local dmg, isCrit = self.playerController:CalcDamage()
     dmg = dmg + weapon.damage
 
-    local pattern = weapon.pattern
-
-    if pattern == WeaponSystem.Pattern.Melee then
+    if weapon.pattern == WeaponSystem.Pattern.Melee then
         self:_attackMelee(weapon, px, py, dmg, isCrit)
-    elseif pattern == WeaponSystem.Pattern.Projectile then
+    elseif weapon.pattern == WeaponSystem.Pattern.Projectile then
         self:_attackProjectile(weapon, px, py, dmg, isCrit)
-    elseif pattern == WeaponSystem.Pattern.AOE then
+    elseif weapon.pattern == WeaponSystem.Pattern.AOE then
         self:_attackAOE(weapon, px, py, dmg, isCrit)
-    elseif pattern == WeaponSystem.Pattern.Orbit then
+    elseif weapon.pattern == WeaponSystem.Pattern.Orbit then
         self:_attackOrbit(weapon, px, py, dmg, isCrit)
-    elseif pattern == WeaponSystem.Pattern.Chain then
+    elseif weapon.pattern == WeaponSystem.Pattern.Chain then
         self:_attackChain(weapon, px, py, dmg, isCrit)
-    elseif pattern == WeaponSystem.Pattern.Beam then
+    elseif weapon.pattern == WeaponSystem.Pattern.Beam then
         self:_attackBeam(weapon, px, py, dmg, isCrit)
     end
 end
@@ -161,15 +158,14 @@ function WeaponSystem:_attackMelee(weapon, px, py, dmg, isCrit)
 end
 
 function WeaponSystem:_attackProjectile(weapon, px, py, dmg, isCrit)
+    if not self.bulletManager then return end
     local targets = self.enemyManager:GetNearestEnemies(px, py, weapon.count)
     for _, enemy in ipairs(targets) do
         local ex, ey = enemy.x, enemy.y
-        local dirX = ex - px
-        local dirY = ey - py
+        local dirX, dirY = ex - px, ey - py
         local len = math.sqrt(dirX * dirX + dirY * dirY)
         if len > 0 then
-            dirX = dirX / len
-            dirY = dirY / len
+            dirX, dirY = dirX / len, dirY / len
         end
 
         self.bulletManager:SpawnBullet({
@@ -202,11 +198,9 @@ function WeaponSystem:_attackOrbit(weapon, px, py, dmg, isCrit)
 end
 
 function WeaponSystem:_attackChain(weapon, px, py, dmg, isCrit)
-    local chainCount = weapon.count
     local chained = {}
     local sourceX, sourceY = px, py
-
-    for i = 1, chainCount do
+    for i = 1, weapon.count do
         local target = self.enemyManager:GetNearestEnemy(sourceX, sourceY, chained)
         if not target then
             break

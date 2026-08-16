@@ -18,7 +18,6 @@ function BattleManager:Ctor()
     self.maxTime = 1200
     self.killCount = 0
     self.expTotal = 0
-
     self.playerController = nil
     self.weaponSystem = nil
     self.bulletManager = nil
@@ -27,7 +26,6 @@ function BattleManager:Ctor()
     self.buffSystem = nil
     self.collisionSystem = nil
     self.damageSystem = nil
-
     self.onPhaseChanged = nil
     self.onEnemyKilled = nil
     self.onLevelUp = nil
@@ -36,6 +34,7 @@ end
 
 function BattleManager:Init(config)
     config = config or {}
+    self:Destroy()
 
     -- 防止重复 Init 覆盖旧 System 导致 Update/回调/资源泄漏。
     if self.phase ~= BattleManager.Phase.None then
@@ -134,9 +133,8 @@ function BattleManager:Resume()
 end
 
 function BattleManager:Update(dt)
-    if self.phase ~= BattleManager.Phase.Running then
-        return
-    end
+    if self.phase ~= BattleManager.Phase.Running then return end
+    if not self.playerController then return end
 
     if not self.playerController
         or not self.weaponSystem
@@ -192,7 +190,6 @@ end
 
 function BattleManager:OnEnemyKilled(enemyId, enemy)
     self.killCount = self.killCount + 1
-
     if self.onEnemyKilled then
         self.onEnemyKilled(enemyId, self.killCount, enemy)
     end
@@ -212,7 +209,6 @@ end
 
 function BattleManager:OnLevelUp()
     self:Pause()
-
     if self.onLevelUp then
         self.onLevelUp()
     end
@@ -225,7 +221,6 @@ function BattleManager:_setPhase(phase)
     end
 
     self.phase = phase
-
     if self.onPhaseChanged then
         self.onPhaseChanged(oldPhase, phase)
     end

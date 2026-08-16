@@ -39,11 +39,22 @@ function DamageSystem:DamageEnemy(enemy, damage, isCrit)
         return false
     end
 
-    return self.enemyManager:TakeDamage(
+    local killed = self.enemyManager:TakeDamage(
         enemy.id,
         damage,
         isCrit
     )
+
+    if killed then
+        if self.onEnemyKilled then
+            self.onEnemyKilled(enemy.id)
+        end
+        if self.onExpGained and enemy.exp and enemy.exp > 0 then
+            self.onExpGained(enemy.exp)
+        end
+    end
+
+    return killed
 end
 
 function DamageSystem:DamagePlayer(damage)
