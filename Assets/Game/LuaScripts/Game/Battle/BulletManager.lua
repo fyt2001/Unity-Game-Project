@@ -30,6 +30,7 @@ function BulletManager:Init()
                 pierce = false,
                 bulletType = "normal",
                 hitIds = {},
+                _remove = false,
             }
         end,
 
@@ -45,6 +46,7 @@ function BulletManager:Init()
             b.traveled = 0
             b.pierce = false
             b.bulletType = "normal"
+            b._remove = false
 
             for k in pairs(b.hitIds) do
                 b.hitIds[k] = nil
@@ -61,6 +63,12 @@ function BulletManager:Inject(enemyManager)
 end
 
 function BulletManager:SpawnBullet(config)
+    if not self._pool then
+        return nil
+    end
+
+    config = config or {}
+
     local bullet = self._pool:Get()
 
     bullet.x = config.x or 0
@@ -74,6 +82,11 @@ function BulletManager:SpawnBullet(config)
     bullet.traveled = 0
     bullet.pierce = config.pierce or false
     bullet.bulletType = config.bulletType or "normal"
+    bullet._remove = false
+
+    for k in pairs(bullet.hitIds) do
+        bullet.hitIds[k] = nil
+    end
 
     table.insert(
         self.bullets,
@@ -150,6 +163,7 @@ end
 function BulletManager:Destroy()
     self.bullets = {}
     self._pendingRemove = {}
+    self.enemyManager = nil
 
     if self._pool then
         self._pool:Clear()
