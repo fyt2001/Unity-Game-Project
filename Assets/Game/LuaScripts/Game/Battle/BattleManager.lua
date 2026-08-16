@@ -14,7 +14,6 @@ BattleManager.Phase = {
 
 function BattleManager:Ctor()
     self.phase = BattleManager.Phase.None
-
     self.elapsedTime = 0
     self.maxTime = 1200
     self.killCount = 0
@@ -43,6 +42,7 @@ function BattleManager:Init(config)
         self:Destroy()
     end
 
+    self.phase = BattleManager.Phase.None
     self.maxTime = config.maxTime or 1200
     self.elapsedTime = 0
     self.killCount = 0
@@ -72,20 +72,29 @@ function BattleManager:Init(config)
     self.enemyManager:Init()
     self.bulletManager:Init()
 
-    -- 3. 注入相互依赖
+    -- 3. 初始化统一伤害系统及死亡/经验回调
+    self.damageSystem:Init(
+        self.playerController,
+        self.enemyManager,
+        function(enemyId, enemy)
+            self:OnEnemyKilled(enemyId, enemy)
+        end,
+        function(exp, enemy)
+            self:OnExpGained(exp, enemy)
+        end
+    )
+
+    -- 4. 注入相互依赖
     self.bulletManager:Inject(self.enemyManager)
 
     self.weaponSystem:Init(self.playerController)
     self.weaponSystem:Inject(
         self.bulletManager,
-        self.enemyManager
+        self.enemyManager,
+        self.damageSystem
     )
 
-    self.enemyManager:SetOnEnemyKilled(function(enemyId)
-        self:OnEnemyKilled(enemyId)
-    end)
-
-    -- 4. 初始化高层 System
+    -- 5. 初始化高层 System
     self.spawnSystem:Init(
         config.waves,
         self.enemyManager
@@ -95,11 +104,6 @@ function BattleManager:Init(config)
         self.playerController
     )
 
-    self.damageSystem:Init(
-        self.playerController,
-        self.enemyManager
-    )
-
     self.collisionSystem:Init(
         self.bulletManager,
         self.enemyManager,
@@ -107,7 +111,7 @@ function BattleManager:Init(config)
         self.damageSystem
     )
 
-    -- 5. 进入 Loading，等待外部 Start()
+    -- 6. 等待外部 Start()
     self:_setPhase(BattleManager.Phase.Loading)
 end
 
@@ -147,40 +151,21 @@ function BattleManager:Update(dt)
 
     self.elapsedTime = self.elapsedTime + dt
 
-    -- 1. 玩家输入 + 移动
+    -- 保持现有战斗循环顺序，避免改变系统间的数据依赖。
     self.playerController:Update(dt)
-
-    -- 2. 武器自动攻击
     self.weaponSystem:Update(dt)
-
-    -- 3. 子弹移动
     self.bulletManager:Update(dt)
 
-    -- 4. 敌人 AI + 移动
     local px, py = self.playerController:GetPosition()
-    self.enemyManager:Update(
-        dt,
-        px,
-        py
-    )
+    self.enemyManager:Update(dt, px, py)
 
-    -- 5. 刷怪
-    self.spawnSystem:Update(
-        dt,
-        self.elapsedTime
-    )
-
-    -- 6. Buff 计时
+    self.spawnSystem:Update(dt, self.elapsedTime)
     self.buffSystem:Update(dt)
-
-    -- 7. 统一碰撞
     self.collisionSystem:Update(dt)
 
-    -- 8. 延迟清理
     self.enemyManager:Cleanup()
     self.bulletManager:Cleanup()
 
-    -- 9. 战斗结束
     self:_checkEndCondition()
 end
 
@@ -205,19 +190,24 @@ function BattleManager:_checkEndCondition()
     end
 end
 
-function BattleManager:OnEnemyKilled(enemyId)
+function BattleManager:OnEnemyKilled(enemyId, enemy)
     self.killCount = self.killCount + 1
 
     if self.onEnemyKilled then
-        self.onEnemyKilled(
-            enemyId,
-            self.killCount
-        )
+        self.onEnemyKilled(enemyId, self.killCount, enemy)
     end
 end
 
 function BattleManager:OnExpGained(exp)
+    exp = exp or 0
     self.expTotal = self.expTotal + exp
+
+    if self.playerController and exp > 0 then
+        local leveledUp = self.playerController:AddExp(exp)
+        if leveledUp then
+            self:OnLevelUp()
+        end
+    end
 end
 
 function BattleManager:OnLevelUp()
@@ -230,7 +220,6 @@ end
 
 function BattleManager:_setPhase(phase)
     local oldPhase = self.phase
-
     if oldPhase == phase then
         return
     end
@@ -238,10 +227,7 @@ function BattleManager:_setPhase(phase)
     self.phase = phase
 
     if self.onPhaseChanged then
-        self.onPhaseChanged(
-            oldPhase,
-            phase
-        )
+        self.onPhaseChanged(oldPhase, phase)
     end
 end
 
@@ -256,40 +242,34 @@ function BattleManager:GetStats()
 end
 
 function BattleManager:Destroy()
-    if self.enemyManager then
+    -- 先解除死亡事件，避免销毁过程中再次回调 BattleManager。
+    if self.damageSystem then
+        self.damageSystem:Destroy()
+    elseif self.enemyManager then
         self.enemyManager:SetOnEnemyKilled(nil)
     end
 
-    if self.playerController then
-        self.playerController:Destroy()
-    end
-
-    if self.weaponSystem then
-        self.weaponSystem:Destroy()
-    end
-
-    if self.bulletManager then
-        self.bulletManager:Destroy()
-    end
-
-    if self.enemyManager then
-        self.enemyManager:Destroy()
-    end
-
-    if self.spawnSystem then
-        self.spawnSystem:Destroy()
-    end
-
-    if self.buffSystem then
-        self.buffSystem:Destroy()
-    end
-
+    -- 按依赖反向释放，避免高层 System 销毁后仍访问底层依赖。
     if self.collisionSystem then
         self.collisionSystem:Destroy()
     end
-
-    if self.damageSystem then
-        self.damageSystem:Destroy()
+    if self.weaponSystem then
+        self.weaponSystem:Destroy()
+    end
+    if self.bulletManager then
+        self.bulletManager:Destroy()
+    end
+    if self.spawnSystem then
+        self.spawnSystem:Destroy()
+    end
+    if self.buffSystem then
+        self.buffSystem:Destroy()
+    end
+    if self.enemyManager then
+        self.enemyManager:Destroy()
+    end
+    if self.playerController then
+        self.playerController:Destroy()
     end
 
     self.playerController = nil
