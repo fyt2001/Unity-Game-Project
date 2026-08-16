@@ -67,7 +67,7 @@ public static class BuildTools
     [MenuItem("Tools/Build/复制 Lua 脚本到 Resources", false, 221)]
     public static void CopyLuaToResources()
     {
-        string sourceDir = Path.Combine(Application.dataPath, "NewObject");
+        string sourceDir = Path.Combine(Application.dataPath, "Game", "LuaScripts");
         string targetDir = Path.Combine(Application.dataPath, "Resources");
 
         if (!Directory.Exists(sourceDir))

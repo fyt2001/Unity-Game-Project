@@ -27,8 +27,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UILayers = require "NewObject.Framework.UI.Config.UILayers"
+local Class = require "Framework.UI.Utils.Class"
+local UILayers = require "Framework.UI.Config.UILayers"
 
 local UILayerManager = Class.Define("UILayerManager")
 

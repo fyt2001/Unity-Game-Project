@@ -37,7 +37,7 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
+local Class = require "Framework.UI.Utils.Class"
 
 local UIModel = Class.Define("UIModel")
 

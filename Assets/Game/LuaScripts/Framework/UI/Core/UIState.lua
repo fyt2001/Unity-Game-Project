@@ -31,7 +31,7 @@ Dependencies:
     - 无外部依赖（纯 Lua 模块）
 
 Usage:
-    local UIState = require "NewObject.Framework.UI.Core.UIState"
+    local UIState = require "Framework.UI.Core.UIState"
     if UIState.IsOpened(window:GetState()) then ... end
     UIState.AssertTransition(from, to, windowName)
 =============================================================================

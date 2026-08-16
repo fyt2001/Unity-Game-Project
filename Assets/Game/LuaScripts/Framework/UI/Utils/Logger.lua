@@ -28,7 +28,7 @@ Dependencies:
     无外部依赖
 
 Usage:
-    local Logger = require "NewObject.Framework.UI.Utils.Logger"
+    local Logger = require "Framework.UI.Utils.Logger"
     Logger.Info("Bag", "Window opened successfully")
     Logger.Error("Bag", "Failed to load resource: %s", path)
 =============================================================================

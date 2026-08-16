@@ -4,8 +4,8 @@ LoginModel.lua - 登录面板数据模型
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIModel = require "NewObject.Framework.UI.Core.UIModel"
+local Class = require "Framework.UI.Utils.Class"
+local UIModel = require "Framework.UI.Core.UIModel"
 
 local LoginModel = Class.Define("LoginModel")
 Class.Extend(LoginModel, UIModel)

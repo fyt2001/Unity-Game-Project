@@ -27,8 +27,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIModel = require "NewObject.Framework.UI.Core.UIModel"
+local Class = require "Framework.UI.Utils.Class"
+local UIModel = require "Framework.UI.Core.UIModel"
 
 local SampleBagModel = Class.Define("SampleBagModel")
 Class.Extend(SampleBagModel, UIModel)

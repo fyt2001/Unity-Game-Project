@@ -44,9 +44,9 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local Logger = require "NewObject.Framework.UI.Utils.Logger"
-local UIState = require "NewObject.Framework.UI.Core.UIState"
+local Class = require "Framework.UI.Utils.Class"
+local Logger = require "Framework.UI.Utils.Logger"
+local UIState = require "Framework.UI.Core.UIState"
 
 local UIWindow = Class.Define("UIWindow")
 

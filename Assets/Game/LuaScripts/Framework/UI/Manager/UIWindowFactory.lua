@@ -34,11 +34,11 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIWindow = require "NewObject.Framework.UI.Core.UIWindow"
-local UIView = require "NewObject.Framework.UI.Core.UIView"
-local UIController = require "NewObject.Framework.UI.Core.UIController"
-local UIModel = require "NewObject.Framework.UI.Core.UIModel"
+local Class = require "Framework.UI.Utils.Class"
+local UIWindow = require "Framework.UI.Core.UIWindow"
+local UIView = require "Framework.UI.Core.UIView"
+local UIController = require "Framework.UI.Core.UIController"
+local UIModel = require "Framework.UI.Core.UIModel"
 
 local UIWindowFactory = Class.Define("UIWindowFactory")
 

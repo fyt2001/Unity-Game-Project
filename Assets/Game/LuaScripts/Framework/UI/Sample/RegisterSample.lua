@@ -20,12 +20,12 @@ Dependencies:
     - UIEnums (枚举定义)
 
 Usage:
-    local RegisterSample = require "NewObject.Framework.UI.Sample.RegisterSample"
+    local RegisterSample = require "Framework.UI.Sample.RegisterSample"
     RegisterSample(uiManager)
 =============================================================================
 ]]
 
-local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
+local UIEnums = require "Framework.UI.Config.UIEnums"
 
 ---注册示例窗口配置到 UIManager
 ---@param uiManager table UIManager 实例
@@ -42,9 +42,9 @@ local function RegisterSample(uiManager)
         cachePolicy = UIEnums.CachePolicy.CacheOnClose,
         zonePolicy = UIEnums.ZonePolicy.Normal,
         openMode = UIEnums.OpenMode.SingleTop,
-        model = "NewObject.Framework.UI.Sample.SampleBagModel",
-        view = "NewObject.Framework.UI.Sample.SampleBagView",
-        controller = "NewObject.Framework.UI.Sample.SampleBagController",
+        model = "Framework.UI.Sample.SampleBagModel",
+        view = "Framework.UI.Sample.SampleBagView",
+        controller = "Framework.UI.Sample.SampleBagController",
         fullscreen = true,
         blockInput = true,
     })

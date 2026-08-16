@@ -21,7 +21,7 @@ Dependencies:
     无外部依赖
 
 Usage:
-    local layers = require "NewObject.Framework.UI.Config.UILayers"
+    local layers = require "Framework.UI.Config.UILayers"
     local normalOrder = layers.Normal.order
 =============================================================================
 ]]

@@ -21,9 +21,9 @@ Description:
         UIManager:RegisterConfig("Bag", {
             layer = "Normal",
             asset = "UI/Bag/BagWindow",
-            view = "NewObject.Framework.UI.Sample.SampleBagView",
-            controller = "NewObject.Framework.UI.Sample.SampleBagController",
-            model = "NewObject.Framework.UI.Sample.SampleBagModel",
+            view = "Framework.UI.Sample.SampleBagView",
+            controller = "Framework.UI.Sample.SampleBagController",
+            model = "Framework.UI.Sample.SampleBagModel",
             cachePolicy = UIEnums.CachePolicy.CacheOnClose,
             openMode = UIEnums.OpenMode.SingleTop,
         })
@@ -37,8 +37,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIWindow = require "NewObject.Framework.UI.Core.UIWindow"
+local Class = require "Framework.UI.Utils.Class"
+local UIWindow = require "Framework.UI.Core.UIWindow"
 
 local SampleBagWindow = Class.Define("SampleBagWindow")
 Class.Extend(SampleBagWindow, UIWindow)

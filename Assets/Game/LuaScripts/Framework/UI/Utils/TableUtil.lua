@@ -24,7 +24,7 @@ Dependencies:
     无外部依赖
 
 Usage:
-    local TableUtil = require "NewObject.Framework.UI.Utils.TableUtil"
+    local TableUtil = require "Framework.UI.Utils.TableUtil"
     TableUtil.RemoveValue(t, value)
     TableUtil.Clear(t)
 =============================================================================

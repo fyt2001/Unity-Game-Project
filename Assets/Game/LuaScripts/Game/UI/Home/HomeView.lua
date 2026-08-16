@@ -4,8 +4,8 @@ HomeView.lua - 主城面板视图
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIView = require "NewObject.Framework.UI.Core.UIView"
+local Class = require "Framework.UI.Utils.Class"
+local UIView = require "Framework.UI.Core.UIView"
 
 local HomeView = Class.Define("HomeView")
 Class.Extend(HomeView, UIView)
