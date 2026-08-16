@@ -6,7 +6,7 @@ from Excel, protobuf, or an internal config platform. This runtime registry is
 kept small so tests can register mock windows easily.
 ]]
 
-local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
+local UIEnums = require "Framework.UI.Config.UIEnums"
 
 local UIWindowConfig = {
 	configs = {},

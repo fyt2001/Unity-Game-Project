@@ -35,12 +35,12 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
-local UIZone = require "NewObject.Framework.UI.Zone.UIZone"
-local UIBackgroundZone = require "NewObject.Framework.UI.Zone.UIBackgroundZone"
-local UIKeepZone = require "NewObject.Framework.UI.Zone.UIKeepZone"
-local UIIgnoreFocusZone = require "NewObject.Framework.UI.Zone.UIIgnoreFocusZone"
+local Class = require "Framework.UI.Utils.Class"
+local UIEnums = require "Framework.UI.Config.UIEnums"
+local UIZone = require "Framework.UI.Zone.UIZone"
+local UIBackgroundZone = require "Framework.UI.Zone.UIBackgroundZone"
+local UIKeepZone = require "Framework.UI.Zone.UIKeepZone"
+local UIIgnoreFocusZone = require "Framework.UI.Zone.UIIgnoreFocusZone"
 
 local UIZoneManager = Class.Define("UIZoneManager")
 

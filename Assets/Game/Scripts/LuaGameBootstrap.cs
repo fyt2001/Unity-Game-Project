@@ -196,17 +196,9 @@ public class LuaGameBootstrap : MonoBehaviour
         List<string> searchPaths = new List<string>
         {
             Path.Combine(Application.dataPath, luaScriptPath, relativePath),
+            Path.Combine(Application.dataPath, "Game", "LuaScripts", relativePath),
             Path.Combine(Application.dataPath, "Resources", relativePath),
-            Path.Combine(Application.dataPath, "NewObject", relativePath),
         };
-
-        // 兜底：去掉可能的 "NewObject." 前缀，直接到 Resources 下查找
-        // 兼容 UI 框架内部使用 "NewObject.Framework.UI.xxx" 的 require 写法
-        string stripped = relativePath;
-        if (stripped.StartsWith("NewObject/", System.StringComparison.OrdinalIgnoreCase))
-            stripped = stripped.Substring("NewObject/".Length);
-        searchPaths.Add(Path.Combine(Application.dataPath, "Resources", stripped));
-        searchPaths.Add(Path.Combine(Application.dataPath, stripped));
 
         foreach (string fullPath in searchPaths)
         {

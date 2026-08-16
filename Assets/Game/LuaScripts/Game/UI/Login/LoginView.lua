@@ -4,8 +4,8 @@ LoginView.lua - 登录面板视图
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIView = require "NewObject.Framework.UI.Core.UIView"
+local Class = require "Framework.UI.Utils.Class"
+local UIView = require "Framework.UI.Core.UIView"
 
 local LoginView = Class.Define("LoginView")
 Class.Extend(LoginView, UIView)

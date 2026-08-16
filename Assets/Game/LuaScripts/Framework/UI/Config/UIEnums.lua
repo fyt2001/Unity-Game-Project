@@ -22,7 +22,7 @@ Dependencies:
     无外部依赖
 
 Usage:
-    local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
+    local UIEnums = require "Framework.UI.Config.UIEnums"
     local config = { openMode = UIEnums.OpenMode.SingleTop }
 =============================================================================
 ]]

@@ -13,8 +13,7 @@ public class LuaPathConfig : ScriptableObject
     [Tooltip("相对于 Assets 的路径，如 LuaScripts")]
     public string[] searchPaths = new string[]
     {
-        "Assets/LuaScripts",
-        "Assets/NewObject",
+        "Assets/Game/LuaScripts",
     };
 
     [Header("入口文件")]

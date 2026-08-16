@@ -4,8 +4,8 @@ HomeModel.lua - 主城面板数据模型
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIModel = require "NewObject.Framework.UI.Core.UIModel"
+local Class = require "Framework.UI.Utils.Class"
+local UIModel = require "Framework.UI.Core.UIModel"
 
 local HomeModel = Class.Define("HomeModel")
 Class.Extend(HomeModel, UIModel)

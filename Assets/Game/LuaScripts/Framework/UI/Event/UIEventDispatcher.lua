@@ -40,8 +40,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local TableUtil = require "NewObject.Framework.UI.Utils.TableUtil"
+local Class = require "Framework.UI.Utils.Class"
+local TableUtil = require "Framework.UI.Utils.TableUtil"
 
 local UIEventDispatcher = Class.Define("UIEventDispatcher")
 

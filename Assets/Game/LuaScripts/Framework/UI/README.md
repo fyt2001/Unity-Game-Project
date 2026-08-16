@@ -31,10 +31,10 @@ Framework/UI
 ## Basic Usage
 
 ```lua
-local UIFramework = require "NewObject.Framework.UI.UIFramework"
+local UIFramework = require "Framework.UI.UIFramework"
 local manager = UIFramework.Create()
 
-local RegisterSample = require "NewObject.Framework.UI.Sample.RegisterSample"
+local RegisterSample = require "Framework.UI.Sample.RegisterSample"
 RegisterSample(UIFramework.UIWindowConfig)
 
 manager:Open("SampleBag", 1)

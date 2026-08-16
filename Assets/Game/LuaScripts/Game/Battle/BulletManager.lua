@@ -60,7 +60,12 @@ function BulletManager:Inject(enemyManager)
 end
 
 function BulletManager:SpawnBullet(config)
+    if not self._pool then
+        return nil
+    end
+
     config = config or {}
+
     local bullet = self._pool:Get()
 
     bullet.x = config.x or 0
@@ -75,6 +80,10 @@ function BulletManager:SpawnBullet(config)
     bullet.pierce = config.pierce or false
     bullet.bulletType = config.bulletType or "normal"
     bullet._remove = false
+
+    for k in pairs(bullet.hitIds) do
+        bullet.hitIds[k] = nil
+    end
 
     table.insert(self.bullets, bullet)
     return bullet
@@ -133,6 +142,7 @@ end
 function BulletManager:Destroy()
     self.bullets = {}
     self._pendingRemove = {}
+    self.enemyManager = nil
 
     if self._pool then
         self._pool:Clear()

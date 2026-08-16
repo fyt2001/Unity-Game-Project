@@ -26,7 +26,7 @@ Dependencies:
     - 所有框架核心模块
 
 Usage:
-    local UI = require "NewObject.Framework.UI.UIFramework"
+    local UI = require "Framework.UI.UIFramework"
     local uiManager = UI.Create()
     uiManager:RegisterConfig("Bag", { ... })
     uiManager:Open("Bag", bagId)
@@ -45,21 +45,21 @@ UIFramework.Version = "3.0.0"
 -- 核心模块引用
 -- =============================================================================
 
-UIFramework.Class = require "NewObject.Framework.UI.Utils.Class"
-UIFramework.Logger = require "NewObject.Framework.UI.Utils.Logger"
-UIFramework.TableUtil = require "NewObject.Framework.UI.Utils.TableUtil"
+UIFramework.Class = require "Framework.UI.Utils.Class"
+UIFramework.Logger = require "Framework.UI.Utils.Logger"
+UIFramework.TableUtil = require "Framework.UI.Utils.TableUtil"
 
-UIFramework.UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
-UIFramework.UILayers = require "NewObject.Framework.UI.Config.UILayers"
-UIFramework.UISettings = require "NewObject.Framework.UI.Config.UISettings"
+UIFramework.UIEnums = require "Framework.UI.Config.UIEnums"
+UIFramework.UILayers = require "Framework.UI.Config.UILayers"
+UIFramework.UISettings = require "Framework.UI.Config.UISettings"
 
-UIFramework.UIState = require "NewObject.Framework.UI.Core.UIState"
-UIFramework.UIView = require "NewObject.Framework.UI.Core.UIView"
-UIFramework.UIModel = require "NewObject.Framework.UI.Core.UIModel"
-UIFramework.UIController = require "NewObject.Framework.UI.Core.UIController"
-UIFramework.UIWindow = require "NewObject.Framework.UI.Core.UIWindow"
+UIFramework.UIState = require "Framework.UI.Core.UIState"
+UIFramework.UIView = require "Framework.UI.Core.UIView"
+UIFramework.UIModel = require "Framework.UI.Core.UIModel"
+UIFramework.UIController = require "Framework.UI.Core.UIController"
+UIFramework.UIWindow = require "Framework.UI.Core.UIWindow"
 
-UIFramework.UIManager = require "NewObject.Framework.UI.Manager.UIManager"
+UIFramework.UIManager = require "Framework.UI.Manager.UIManager"
 
 -- =============================================================================
 -- 公共 API：工厂方法

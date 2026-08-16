@@ -30,8 +30,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIView = require "NewObject.Framework.UI.Core.UIView"
+local Class = require "Framework.UI.Utils.Class"
+local UIView = require "Framework.UI.Core.UIView"
 
 local SampleBagView = Class.Define("SampleBagView")
 Class.Extend(SampleBagView, UIView)

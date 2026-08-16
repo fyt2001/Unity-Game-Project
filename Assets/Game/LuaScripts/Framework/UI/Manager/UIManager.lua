@@ -61,26 +61,26 @@ Dependencies:
     - 所有 Manager、Config、Core、Utils 模块
 
 Usage:
-    local UIFramework = require "NewObject.Framework.UI.UIFramework"
+    local UIFramework = require "Framework.UI.UIFramework"
     local ui = UIFramework.Create()
     ui:Open("Bag", bagId)
     ui:Close("Bag", "UserClosed")
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local Logger = require "NewObject.Framework.UI.Utils.Logger"
-local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
-local UIWindowConfig = require "NewObject.Framework.UI.Config.UIWindowConfig"
-local UIResourceLoader = require "NewObject.Framework.UI.Resource.UIResourceLoader"
-local UIAnimationManager = require "NewObject.Framework.UI.Animation.UIAnimationManager"
-local UIEventDispatcher = require "NewObject.Framework.UI.Event.UIEventDispatcher"
-local UIWindowCache = require "NewObject.Framework.UI.Cache.UIWindowCache"
-local UIWindowStack = require "NewObject.Framework.UI.Manager.UIWindowStack"
-local UIWindowFactory = require "NewObject.Framework.UI.Manager.UIWindowFactory"
-local UILayerManager = require "NewObject.Framework.UI.Layer.UILayerManager"
-local UIZoneManager = require "NewObject.Framework.UI.Zone.UIZoneManager"
-local UIBlockManager = require "NewObject.Framework.UI.Manager.UIBlockManager"
+local Class = require "Framework.UI.Utils.Class"
+local Logger = require "Framework.UI.Utils.Logger"
+local UIEnums = require "Framework.UI.Config.UIEnums"
+local UIWindowConfig = require "Framework.UI.Config.UIWindowConfig"
+local UIResourceLoader = require "Framework.UI.Resource.UIResourceLoader"
+local UIAnimationManager = require "Framework.UI.Animation.UIAnimationManager"
+local UIEventDispatcher = require "Framework.UI.Event.UIEventDispatcher"
+local UIWindowCache = require "Framework.UI.Cache.UIWindowCache"
+local UIWindowStack = require "Framework.UI.Manager.UIWindowStack"
+local UIWindowFactory = require "Framework.UI.Manager.UIWindowFactory"
+local UILayerManager = require "Framework.UI.Layer.UILayerManager"
+local UIZoneManager = require "Framework.UI.Zone.UIZoneManager"
+local UIBlockManager = require "Framework.UI.Manager.UIBlockManager"
 
 local UIManager = Class.Define("UIManager")
 

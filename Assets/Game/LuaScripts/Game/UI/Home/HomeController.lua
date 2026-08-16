@@ -4,8 +4,8 @@ HomeController.lua - 主城面板控制器
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIController = require "NewObject.Framework.UI.Core.UIController"
+local Class = require "Framework.UI.Utils.Class"
+local UIController = require "Framework.UI.Core.UIController"
 
 local HomeController = Class.Define("HomeController")
 Class.Extend(HomeController, UIController)

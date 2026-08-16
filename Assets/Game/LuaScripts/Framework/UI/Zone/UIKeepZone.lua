@@ -32,8 +32,8 @@ Usage:
 =============================================================================
 ]]
 
-local Class = require "NewObject.Framework.UI.Utils.Class"
-local UIZone = require "NewObject.Framework.UI.Zone.UIZone"
+local Class = require "Framework.UI.Utils.Class"
+local UIZone = require "Framework.UI.Zone.UIZone"
 
 local UIKeepZone = Class.Define("UIKeepZone")
 Class.Extend(UIKeepZone, UIZone)

@@ -9,11 +9,29 @@ function DamageSystem:Ctor()
     self.onExpGained = nil
 end
 
+--- 初始化伤害系统并注册统一死亡回调
+---@param playerController table
+---@param enemyManager table
+---@param onEnemyKilled function|nil function(enemyId, enemy)
+---@param onExpGained function|nil function(exp, enemy)
 function DamageSystem:Init(playerController, enemyManager, onEnemyKilled, onExpGained)
     self.playerController = playerController
     self.enemyManager = enemyManager
     self.onEnemyKilled = onEnemyKilled
     self.onExpGained = onExpGained
+
+    -- 所有敌人死亡事件统一经过 DamageSystem，避免 Weapon/Collision 各自处理死亡奖励。
+    if self.enemyManager then
+        self.enemyManager:SetOnEnemyKilled(function(enemyId, enemy)
+            if self.onEnemyKilled then
+                self.onEnemyKilled(enemyId, enemy)
+            end
+
+            if self.onExpGained and enemy then
+                self.onExpGained(enemy.exp or 0, enemy)
+            end
+        end)
+    end
 end
 
 function DamageSystem:DamageEnemy(enemy, damage, isCrit)
@@ -48,6 +66,10 @@ function DamageSystem:DamagePlayer(damage)
 end
 
 function DamageSystem:Destroy()
+    if self.enemyManager then
+        self.enemyManager:SetOnEnemyKilled(nil)
+    end
+
     self.playerController = nil
     self.enemyManager = nil
     self.onEnemyKilled = nil

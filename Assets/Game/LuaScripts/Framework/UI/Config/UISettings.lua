@@ -24,12 +24,12 @@ Dependencies:
     - UIEnums (引用枚举默认值)
 
 Usage:
-    local settings = require "NewObject.Framework.UI.Config.UISettings"
+    local settings = require "Framework.UI.Config.UISettings"
     local cachePolicy = settings.DefaultCachePolicy
 =============================================================================
 ]]
 
-local UIEnums = require "NewObject.Framework.UI.Config.UIEnums"
+local UIEnums = require "Framework.UI.Config.UIEnums"
 
 local UISettings = {
     -- =========================================================================
