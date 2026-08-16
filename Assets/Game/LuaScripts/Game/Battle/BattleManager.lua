@@ -38,6 +38,11 @@ end
 function BattleManager:Init(config)
     config = config or {}
 
+    -- 防止重复 Init 覆盖旧 System 导致 Update/回调/资源泄漏。
+    if self.phase ~= BattleManager.Phase.None then
+        self:Destroy()
+    end
+
     self.maxTime = config.maxTime or 1200
     self.elapsedTime = 0
     self.killCount = 0
