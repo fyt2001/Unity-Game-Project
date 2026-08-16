@@ -1,0 +1,45 @@
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# MemoryCaptures
+[Mm]emoryCaptures/
+
+# Asset metadata should be committed
+!/[Aa]ssets/**/*.meta
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# Unity generated solution files
+ExportedObj/
+.consulo/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Crash reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+
+# Addressables
+ServerData/
+
+# JetBrains
+*.DotSettings.user

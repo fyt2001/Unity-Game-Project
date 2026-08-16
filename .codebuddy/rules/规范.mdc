@@ -1,0 +1,9 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-08-06T14:00:44.791Z
+provider: 
+---
+
+不要进行补丁式开发，要阅读上下文给出本质问题的解决方案
