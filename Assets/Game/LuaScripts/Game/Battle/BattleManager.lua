@@ -14,12 +14,10 @@ BattleManager.Phase = {
 
 function BattleManager:Ctor()
     self.phase = BattleManager.Phase.None
-
     self.elapsedTime = 0
     self.maxTime = 1200
     self.killCount = 0
     self.expTotal = 0
-
     self.playerController = nil
     self.weaponSystem = nil
     self.bulletManager = nil
@@ -28,7 +26,6 @@ function BattleManager:Ctor()
     self.buffSystem = nil
     self.collisionSystem = nil
     self.damageSystem = nil
-
     self.onPhaseChanged = nil
     self.onEnemyKilled = nil
     self.onLevelUp = nil
@@ -37,7 +34,9 @@ end
 
 function BattleManager:Init(config)
     config = config or {}
+    self:Destroy()
 
+    self.phase = BattleManager.Phase.None
     self.maxTime = config.maxTime or 1200
     self.elapsedTime = 0
     self.killCount = 0
@@ -52,6 +51,7 @@ function BattleManager:Init(config)
     local CollisionSystem = require "Game.Battle.CollisionSystem"
     local DamageSystem = require "Game.Battle.DamageSystem"
 
+    -- 1. 创建所有系统
     self.playerController = PlayerController.New()
     self.weaponSystem = WeaponSystem.New()
     self.bulletManager = BulletManager.New()
@@ -61,41 +61,31 @@ function BattleManager:Init(config)
     self.collisionSystem = CollisionSystem.New()
     self.damageSystem = DamageSystem.New()
 
-    -- 初始化数据系统
+    -- 2. 初始化基础系统
     self.playerController:Init(config.player)
-
     self.enemyManager:Init()
-
     self.bulletManager:Init()
 
-    -- 注入依赖
-    self.bulletManager:Inject(
-        self.enemyManager
-    )
-
-    self.weaponSystem:Init(
-        self.playerController
-    )
-
-    self.weaponSystem:Inject(
-        self.bulletManager,
-        self.enemyManager
-    )
-
-    self.spawnSystem:Init(
-        config.waves,
-        self.enemyManager
-    )
-
-    self.buffSystem:Init(
-        self.playerController
-    )
-
+    -- 3. 初始化 DamageSystem（回调只依赖 BattleManager 自身状态）
     self.damageSystem:Init(
         self.playerController,
-        self.enemyManager
+        self.enemyManager,
+        function(enemyId) self:OnEnemyKilled(enemyId) end,
+        function(exp) self:OnExpGained(exp) end
     )
 
+    -- 4. 注入相互依赖
+    self.bulletManager:Inject(self.enemyManager)
+    self.weaponSystem:Init(self.playerController)
+    self.weaponSystem:Inject(
+        self.bulletManager,
+        self.enemyManager,
+        self.damageSystem
+    )
+
+    -- 5. 初始化高层系统
+    self.spawnSystem:Init(config.waves, self.enemyManager)
+    self.buffSystem:Init(self.playerController)
     self.collisionSystem:Init(
         self.bulletManager,
         self.enemyManager,
@@ -125,89 +115,67 @@ function BattleManager:Resume()
 end
 
 function BattleManager:Update(dt)
-    if self.phase ~= BattleManager.Phase.Running then
-        return
-    end
+    if self.phase ~= BattleManager.Phase.Running then return end
+    if not self.playerController then return end
 
     self.elapsedTime = self.elapsedTime + dt
 
-    -- 1. 玩家
     self.playerController:Update(dt)
-
-    -- 2. Buff
     self.buffSystem:Update(dt)
+    self.spawnSystem:Update(dt, self.elapsedTime)
 
-    -- 3. 刷怪
-    self.spawnSystem:Update(
-        dt,
-        self.elapsedTime
-    )
-
-    -- 4. 敌人
     local px, py = self.playerController:GetPosition()
+    self.enemyManager:Update(dt, px, py)
 
-    self.enemyManager:Update(
-        dt,
-        px,
-        py
-    )
-
-    -- 5. 武器
     self.weaponSystem:Update(dt)
-
-    -- 6. 子弹
     self.bulletManager:Update(dt)
-
-    -- 7. 统一碰撞
     self.collisionSystem:Update(dt)
 
-    -- 8. 清理
     self.enemyManager:Cleanup()
     self.bulletManager:Cleanup()
 
-    -- 9. 战斗结束
     self:_checkEndCondition()
 end
 
 function BattleManager:_checkEndCondition()
+    if self.phase ~= BattleManager.Phase.Running then return end
+
     if self.elapsedTime >= self.maxTime then
-        if self.phase == BattleManager.Phase.Running then
-            self:_setPhase(BattleManager.Phase.Victory)
-            if self.onBattleEnd then
-                self.onBattleEnd(true, self.killCount, self.elapsedTime)
-            end
+        self:_setPhase(BattleManager.Phase.Victory)
+        if self.onBattleEnd then
+            self.onBattleEnd(true, self.killCount, self.elapsedTime)
         end
         return
     end
 
     if self.playerController:IsDead() then
-        if self.phase == BattleManager.Phase.Running then
-            self:_setPhase(BattleManager.Phase.Defeat)
-            if self.onBattleEnd then
-                self.onBattleEnd(false, self.killCount, self.elapsedTime)
-            end
+        self:_setPhase(BattleManager.Phase.Defeat)
+        if self.onBattleEnd then
+            self.onBattleEnd(false, self.killCount, self.elapsedTime)
         end
     end
 end
 
 function BattleManager:OnEnemyKilled(enemyId)
     self.killCount = self.killCount + 1
-
     if self.onEnemyKilled then
-        self.onEnemyKilled(
-            enemyId,
-            self.killCount
-        )
+        self.onEnemyKilled(enemyId, self.killCount)
     end
 end
 
 function BattleManager:OnExpGained(exp)
     self.expTotal = self.expTotal + exp
+
+    if self.playerController then
+        local leveledUp = self.playerController:AddExp(exp)
+        if leveledUp then
+            self:OnLevelUp()
+        end
+    end
 end
 
 function BattleManager:OnLevelUp()
     self:Pause()
-
     if self.onLevelUp then
         self.onLevelUp()
     end
@@ -215,18 +183,10 @@ end
 
 function BattleManager:_setPhase(phase)
     local oldPhase = self.phase
-
-    if oldPhase == phase then
-        return
-    end
-
+    if oldPhase == phase then return end
     self.phase = phase
-
     if self.onPhaseChanged then
-        self.onPhaseChanged(
-            oldPhase,
-            phase
-        )
+        self.onPhaseChanged(oldPhase, phase)
     end
 end
 
@@ -241,37 +201,14 @@ function BattleManager:GetStats()
 end
 
 function BattleManager:Destroy()
-    if self.playerController then
-        self.playerController:Destroy()
-    end
-
-    if self.weaponSystem then
-        self.weaponSystem:Destroy()
-    end
-
-    if self.bulletManager then
-        self.bulletManager:Destroy()
-    end
-
-    if self.enemyManager then
-        self.enemyManager:Destroy()
-    end
-
-    if self.spawnSystem then
-        self.spawnSystem:Destroy()
-    end
-
-    if self.buffSystem then
-        self.buffSystem:Destroy()
-    end
-
-    if self.collisionSystem then
-        self.collisionSystem:Destroy()
-    end
-
-    if self.damageSystem then
-        self.damageSystem:Destroy()
-    end
+    if self.playerController then self.playerController:Destroy() end
+    if self.weaponSystem then self.weaponSystem:Destroy() end
+    if self.bulletManager then self.bulletManager:Destroy() end
+    if self.enemyManager then self.enemyManager:Destroy() end
+    if self.spawnSystem then self.spawnSystem:Destroy() end
+    if self.buffSystem then self.buffSystem:Destroy() end
+    if self.collisionSystem then self.collisionSystem:Destroy() end
+    if self.damageSystem then self.damageSystem:Destroy() end
 
     self.playerController = nil
     self.weaponSystem = nil
