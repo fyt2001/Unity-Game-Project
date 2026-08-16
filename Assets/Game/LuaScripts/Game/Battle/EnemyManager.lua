@@ -3,7 +3,7 @@
 EnemyManager.lua V1.1
 =============================================================================
 Module:     Game/Battle/EnemyManager
-Version:    1.1.2
+Version:    1.1.3
 
 Description:
     敌人管理器。管理所有敌人的创建、移动、伤害、死亡。
@@ -16,14 +16,10 @@ Description:
         - Grid 增量更新：只有跨 Cell 时才重新索引
         - 最近目标查询使用 Grid 环形搜索 + 精确 Cell 距离下界
 
-Changelog V1.1.2:
-    - 修复 GetNearestEnemies 全局 fallback 可能重复插入同一 Enemy 的问题
-
-Usage:
-    local em = EnemyManager.New()
-    em:Init()
-    em:SpawnEnemy(config)
-    em:Update(dt, playerX, playerY)
+Changelog V1.1.3:
+    - 死亡时立即从 enemyMap 移除，避免死亡窗口继续被 ID 查询命中
+    - 最近目标 Grid 搜索在达到最大半径仍无法证明正确时执行全局 fallback
+    - GetNearestEnemies 仅在 Grid 搜索无法证明正确时执行全局 fallback
 =============================================================================
 ]]
 
@@ -147,8 +143,11 @@ function EnemyManager:TakeDamage(enemyId, damage, isCrit)
     if enemy.hp <= 0 then
         enemy.hp = 0
         enemy.isDead = true
-        table.insert(self._pendingRemove, enemyId)
+
+        -- 立即从 Grid 和 Map 移除；enemies 数组仍延迟清理。
         self:_removeFromGrid(enemy, enemy.gridX, enemy.gridY)
+        self._enemyMap[enemy.id] = nil
+        table.insert(self._pendingRemove, enemyId)
 
         if self.onEnemyKilled then
             self.onEnemyKilled(enemy.id, enemy)
@@ -255,6 +254,7 @@ function EnemyManager:GetNearestEnemy(x, y, exclude)
 
     local nearest = nil
     local minDistSq = math.huge
+    local searchComplete = false
 
     local maxRadius = 10
     for radius = 0, maxRadius do
@@ -289,21 +289,25 @@ function EnemyManager:GetNearestEnemy(x, y, exclude)
                 radius
             )
             if minDistSq <= nextRingMinDistSq then
-                return nearest
+                searchComplete = true
+                break
             end
         end
     end
 
-    if not nearest then
-        for _, enemy in ipairs(self.enemies) do
-            if not enemy.isDead and not excludeSet[enemy.id] then
-                local dx = enemy.x - x
-                local dy = enemy.y - y
-                local distSq = dx * dx + dy * dy
-                if distSq < minDistSq then
-                    minDistSq = distSq
-                    nearest = enemy
-                end
+    if searchComplete then
+        return nearest
+    end
+
+    -- 未能通过 Cell 下界证明全局最近，执行正确性 fallback。
+    for _, enemy in ipairs(self.enemies) do
+        if not enemy.isDead and not excludeSet[enemy.id] then
+            local dx = enemy.x - x
+            local dy = enemy.y - y
+            local distSq = dx * dx + dy * dy
+            if distSq < minDistSq then
+                minDistSq = distSq
+                nearest = enemy
             end
         end
     end
@@ -321,7 +325,6 @@ function EnemyManager:GetNearestEnemies(x, y, count)
 
     local topN = {}
     local topNCount = 0
-    local seenIds = {}
 
     local function insertTopN(enemy, distSq)
         if topNCount < count then
@@ -342,7 +345,9 @@ function EnemyManager:GetNearestEnemies(x, y, count)
         end
     end
 
+    local searchComplete = false
     local maxRadius = 15
+
     for radius = 0, maxRadius do
         for dgx = -radius, radius do
             for dgy = -radius, radius do
@@ -351,8 +356,7 @@ function EnemyManager:GetNearestEnemies(x, y, count)
                     local cell = self._grid[key]
                     if cell then
                         for _, enemy in ipairs(cell) do
-                            if not enemy.isDead and not seenIds[enemy.id] then
-                                seenIds[enemy.id] = true
+                            if not enemy.isDead then
                                 local dx = enemy.x - x
                                 local dy = enemy.y - y
                                 local distSq = dx * dx + dy * dy
@@ -373,22 +377,21 @@ function EnemyManager:GetNearestEnemies(x, y, count)
                 radius
             )
             if topN[topNCount].distSq <= nextRingMinDistSq then
+                searchComplete = true
                 break
             end
         end
     end
 
-    -- Grid 局部搜索结束后仍做全局 fallback，但只维护 Top-N，避免 table.sort。
-    -- seenIds 保证同一 Enemy 不会因为 fallback 被重复加入。
-    for _, enemy in ipairs(self.enemies) do
-        if not enemy.isDead and not seenIds[enemy.id] then
-            seenIds[enemy.id] = true
-
-            local dx = enemy.x - x
-            local dy = enemy.y - y
-            local distSq = dx * dx + dy * dy
-
-            insertTopN(enemy, distSq)
+    -- 如果 Grid 搜索已经证明 Top-N 正确，不再扫描全体敌人。
+    if not searchComplete then
+        for _, enemy in ipairs(self.enemies) do
+            if not enemy.isDead then
+                local dx = enemy.x - x
+                local dy = enemy.y - y
+                local distSq = dx * dx + dy * dy
+                insertTopN(enemy, distSq)
+            end
         end
     end
 
@@ -489,10 +492,6 @@ function EnemyManager:_flushRemoved()
         end
     end
     self.enemies = alive
-
-    for _, id in ipairs(self._pendingRemove) do
-        self._enemyMap[id] = nil
-    end
 
     self._pendingRemove = {}
 end
