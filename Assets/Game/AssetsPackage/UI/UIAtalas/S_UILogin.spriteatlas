@@ -1,0 +1,127 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: S_UILogin
+  serializedVersion: 2
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings:
+    - serializedVersion: 3
+      m_BuildTarget: iPhone
+      m_MaxTextureSize: 2048
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: 50
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 1
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    - serializedVersion: 3
+      m_BuildTarget: Android
+      m_MaxTextureSize: 4096
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: 51
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 1
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    packingSettings:
+      serializedVersion: 2
+      padding: 2
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: b8b0779943df1ef46bc3da5f9585ef89, type: 3}
+    bindAsDefault: 0
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: 7984d1c09b2eae64980b16e26eb50dd4, type: 3}
+  - {fileID: 21300000, guid: 71b1ab51a9d6c184f9aaebfc12587c9b, type: 3}
+  - {fileID: 21300000, guid: 78680d61497c55443881f4e4babdcc85, type: 3}
+  - {fileID: 21300000, guid: 92152071b9e40f74492f144c8643527c, type: 3}
+  - {fileID: 21300000, guid: 02e5dab19f8a9494c9f51fabb1264c90, type: 3}
+  - {fileID: 21300000, guid: 2e914f924201cef4e9948b863b7aaac0, type: 3}
+  - {fileID: 21300000, guid: e4488bc28f8b3404eb81a38f630fa11c, type: 3}
+  - {fileID: 21300000, guid: c9502f1406c03634e84df03c633ef3f9, type: 3}
+  - {fileID: 21300000, guid: e262373477dc599458b0bbfb074c637c, type: 3}
+  - {fileID: 21300000, guid: 810d2984d41ad874eb53e6bdb7ed6e6f, type: 3}
+  - {fileID: 21300000, guid: dcd098d44e983e54ebe23dff6d1894a4, type: 3}
+  - {fileID: 21300000, guid: 77d068467d34f974985f5a60899f26fb, type: 3}
+  - {fileID: 21300000, guid: 117985e63d43ad94dbe2ac54d744eb09, type: 3}
+  - {fileID: 21300000, guid: 575baad7d7015be4eb92885c594ac3c2, type: 3}
+  - {fileID: 21300000, guid: ac2dcbe746494334db9abc73c3417681, type: 3}
+  - {fileID: 21300000, guid: ab3e3e489637a4e42a3efb621c06dd8d, type: 3}
+  - {fileID: 21300000, guid: cfdf16c8aa56acb46ac341b0535ffdfd, type: 3}
+  - {fileID: 21300000, guid: 406b90f88c3b72548a95c6569802509e, type: 3}
+  - {fileID: 21300000, guid: d7e5e85994bee2a40b941a0f34e5372c, type: 3}
+  - {fileID: 21300000, guid: e4b2ef69c9d7d3a469586b3de0ac8770, type: 3}
+  - {fileID: 21300000, guid: 7a22e37be03385a4bafb63a0430c6477, type: 3}
+  - {fileID: 21300000, guid: d614fb9b2a8dc234eb84c45a2ea83c35, type: 3}
+  - {fileID: 21300000, guid: 1097a8ab0d0b3fb47adea3057bfa6a94, type: 3}
+  - {fileID: 21300000, guid: da151d5cdf20e5b4da73ac5718acbf2c, type: 3}
+  - {fileID: 21300000, guid: 6215ad5ce4f09024ead47fd59a81341e, type: 3}
+  - {fileID: 21300000, guid: cbcfed5c366edf9438cbd19ac2622894, type: 3}
+  - {fileID: 21300000, guid: b26e72ac6701a0348b769a7ac61e8968, type: 3}
+  - {fileID: 21300000, guid: 7d656d0dabf0d0b4c8fbf33735ae7430, type: 3}
+  - {fileID: 21300000, guid: b2f3052e51461ec4581572bafcf00952, type: 3}
+  - {fileID: 21300000, guid: 19aca38e2bf39de4e8887fd3def93f81, type: 3}
+  - {fileID: 21300000, guid: 896610fe9f6ccfb42a5f31055012acd4, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - icon_dlt_xieyi
+  - img_dlt_bg
+  - login_icon_server_state_new
+  - img_dlt_loding2
+  - img_dlt_loding8
+  - img_dlt_loding7
+  - img_dlt_loding4
+  - img_dlt_shiling16
+  - login_icon_server_state_recommend
+  - img_dlt_loding5
+  - img_dlt_loding3
+  - img_dlt_wenzidi 02
+  - icon_dlt_gonggao
+  - img_gonggao_line
+  - img_dlt_loding1
+  - img_dlt_shiling
+  - img_dlt_loding
+  - icon_dlt_xiala
+  - login_icon_server_state_stop
+  - img_dlt_xuanfu
+  - login_icon_server_state_busy
+  - img_dlt_loding6
+  - img_dlt_jingdutiao2
+  - img_dlt_jingdutiao1
+  - img_dlt_wenzidi
+  - age_limit_18
+  - img_dlt_jingdutiao3
+  - img_jrjm_gou_di
+  - img_jrjm_gou
+  - img_dlt_bg02
+  - login_icon_server_state_empty
+  m_Tag: UILogin_New
+  m_IsVariant: 0
+  m_IsPlaceholder: 0

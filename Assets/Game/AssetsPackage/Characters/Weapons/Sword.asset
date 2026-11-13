@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66d539b05c38baa43a2807c0f63d735b, type: 3}
+  m_Name: Sword
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 4257971954628086096, guid: b4b1b4f891d14dd4cb69c710c80c4ac7, type: 3}
+  handBone: Fist.R
+  gripPosition: {x: 0, y: 0, z: 0}
+  gripRotation: {x: 355.62054, y: 96.38889, z: 112.09222}
+  worldScale: 1
+  holdState: HoldSword
+  attackState: SwordSlash
+  attackClip: {fileID: 2321273963174291681, guid: 19b0889ccce71ed448284a256d5d874b, type: 3}
+  releaseFraction: 0.28
+  maximumAnimationSpeed: 2
+  trailDuration: 0.18

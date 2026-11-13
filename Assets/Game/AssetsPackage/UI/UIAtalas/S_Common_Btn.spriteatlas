@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: S_Common_Btn
+  serializedVersion: 2
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings:
+    - serializedVersion: 3
+      m_BuildTarget: DefaultTexturePlatform
+      m_MaxTextureSize: 2048
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: -1
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 0
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    - serializedVersion: 3
+      m_BuildTarget: iPhone
+      m_MaxTextureSize: 2048
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: 50
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 1
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    - serializedVersion: 3
+      m_BuildTarget: Android
+      m_MaxTextureSize: 4096
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: 51
+      m_TextureCompression: 1
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 1
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    packingSettings:
+      serializedVersion: 2
+      padding: 2
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: 45c731243a522a247aa57697fb77b977, type: 3}
+    bindAsDefault: 0
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: b2a62250a699ddf4685520f3a74d25cb, type: 3}
+  - {fileID: 21300000, guid: 07890ce011c3a474c93269fdd20dd48f, type: 3}
+  - {fileID: 21300000, guid: 3df51752a4d36cb4ab5d614c10641ca4, type: 3}
+  - {fileID: 21300000, guid: c4762ff43e322174cbc0a959da8e2964, type: 3}
+  - {fileID: 21300000, guid: f5612f25b6dd0364dab53096c00a5f54, type: 3}
+  - {fileID: 21300000, guid: 69b96377261ab8a469695fe2f95d593a, type: 3}
+  - {fileID: 21300000, guid: debfaea71844e8947ae622beaf56fd82, type: 3}
+  - {fileID: 21300000, guid: 270c0ca99c000454a947efab3791716f, type: 3}
+  - {fileID: 21300000, guid: 2ce616b926566d8449d34ed413c94fd6, type: 3}
+  - {fileID: 21300000, guid: 36dfd3c999059724c9f6b0cd26879ce7, type: 3}
+  - {fileID: 21300000, guid: a0cdbe4ac08b6e943ab8b74912410ab4, type: 3}
+  - {fileID: 21300000, guid: 59f47aaac5d5d604baa951edfdc9ad68, type: 3}
+  - {fileID: 21300000, guid: faa0a14b116b5e44d8f30a3a94f98cb6, type: 3}
+  - {fileID: 21300000, guid: 3500237b224770a4b9da4ac8cac72947, type: 3}
+  - {fileID: 21300000, guid: 3a4f33ab9a265e94b90983708c92fa8e, type: 3}
+  - {fileID: 21300000, guid: c5d0aebb812e30d4bb62cdc6d37a270b, type: 3}
+  - {fileID: 21300000, guid: c943d90d8f49b7947868525bde63f6a0, type: 3}
+  - {fileID: 21300000, guid: 1929858d1ada0af4291824cf41d5cb40, type: 3}
+  - {fileID: 21300000, guid: ba465baddb6465e4db89593dfb08993f, type: 3}
+  - {fileID: 21300000, guid: 45dda96f54253de409ab18c3240d8a5f, type: 3}
+  - {fileID: 21300000, guid: f64d087ff080f2a49b84cfe659962e2e, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - common_btn_lan_da
+  - common_btn_hui_xiao
+  - common_btn2_hui_zhong
+  - common_tc_yq_d02
+  - common_btn_huang_zhong
+  - common_btn_hui_da
+  - common_btn_huang_xiao
+  - common_btn2_huang_xiao
+  - common_btn_huang_da
+  - common_btn2_huang_da
+  - common_btn2_hui_da
+  - common_btn_lan_xiao
+  - common_tc_yq_d01
+  - common_btn2_hui_xiao
+  - common_btn2_huang_zhong
+  - common_btn2_lan_da
+  - common_btn2_lan_zhong
+  - common_btn_hui_zhong
+  - btn_yk_yk_0
+  - common_btn_lan_zhong
+  - common_btn2_lan_xiao
+  m_Tag: Common_Btn
+  m_IsVariant: 0
+  m_IsPlaceholder: 0
