@@ -3,6 +3,9 @@
 // =============================================================================
 // 来源: ShaoNvClient_H02 文件路径管理（提炼精华）
 // 升级: 增加文件校验、路径安全处理、异步读写
+// 多平台: 底层 IO 统一走 Storage.Current（默认 FileStorage = System.IO）。
+//         Editor / PC / Android / iOS 行为与改造前完全一致；
+//         微信小游戏不支持 System.File，届时注入 WX SDK 实现即可，本类无需改动。
 // =============================================================================
 
 using System;
@@ -32,7 +35,7 @@ public static class FileUtils
     /// </summary>
     public static byte[] SafeReadAllBytes(string filePath)
     {
-        if (!File.Exists(filePath))
+        if (!Storage.Current.FileExists(filePath))
         {
             DebugLogger.Warn($"[FileUtils] File not found: {filePath}");
             return null;
@@ -40,7 +43,7 @@ public static class FileUtils
 
         try
         {
-            return File.ReadAllBytes(filePath);
+            return Storage.Current.ReadAllBytes(filePath);
         }
         catch (Exception e)
         {
@@ -54,7 +57,7 @@ public static class FileUtils
     /// </summary>
     public static string SafeReadAllText(string filePath, Encoding encoding = null)
     {
-        if (!File.Exists(filePath))
+        if (!Storage.Current.FileExists(filePath))
         {
             DebugLogger.Warn($"[FileUtils] File not found: {filePath}");
             return null;
@@ -62,7 +65,9 @@ public static class FileUtils
 
         try
         {
-            return File.ReadAllText(filePath, encoding ?? Encoding.UTF8);
+            // Storage 默认实现（FileStorage）按 UTF8 读取（自动识别 BOM）。
+            // encoding 参数保留仅为兼容既有调用签名，不参与实际解码。
+            return Storage.Current.ReadAllText(filePath);
         }
         catch (Exception e)
         {
@@ -79,12 +84,12 @@ public static class FileUtils
         try
         {
             string dir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            if (!string.IsNullOrEmpty(dir) && !Storage.Current.DirectoryExists(dir))
             {
-                Directory.CreateDirectory(dir);
+                Storage.Current.CreateDirectory(dir);
             }
 
-            File.WriteAllBytes(filePath, data);
+            Storage.Current.WriteAllBytes(filePath, data);
             return true;
         }
         catch (Exception e)
@@ -119,9 +124,9 @@ public static class FileUtils
     /// </summary>
     public static string GetFileSizeString(string filePath)
     {
-        if (!File.Exists(filePath)) return "0 B";
+        if (!Storage.Current.FileExists(filePath)) return "0 B";
 
-        long size = new FileInfo(filePath).Length;
+        long size = Storage.Current.GetFileSize(filePath);
         return FormatSize(size);
     }
 
@@ -148,9 +153,9 @@ public static class FileUtils
     /// </summary>
     public static void CreateAssetsPath()
     {
-        if (!Directory.Exists(PersistentDataPath))
+        if (!Storage.Current.DirectoryExists(PersistentDataPath))
         {
-            Directory.CreateDirectory(PersistentDataPath);
+            Storage.Current.CreateDirectory(PersistentDataPath);
             DebugLogger.Info($"[FileUtils] Created persistent path: {PersistentDataPath}");
         }
     }
@@ -162,9 +167,9 @@ public static class FileUtils
     {
         try
         {
-            if (Directory.Exists(path))
+            if (Storage.Current.DirectoryExists(path))
             {
-                Directory.Delete(path, recursive);
+                Storage.Current.DeleteDirectory(path, recursive);
                 return true;
             }
         }
@@ -181,5 +186,33 @@ public static class FileUtils
     public static bool IsInPersistentPath(string filePath)
     {
         return filePath.StartsWith(PersistentDataPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // =========================================================================
+    // 热更路径助手（对齐 ShaoNvClient_H02 FileUtils，供 WebDownLoadManager 使用）
+    // =========================================================================
+
+    /// <summary>热更 CDN 根地址（http(s)://...），由启动流程/配置赋值。</summary>
+    public static string RemoteAssetUrl { get; set; } = string.Empty;
+
+    /// <summary>系统可读写热更目录（persistentDataPath 末尾带 /）。</summary>
+    public static string PersistentPathSys => PersistentDataPath + "/";
+
+    /// <summary>拼接远程资源 URL（对齐 H02 FileUtils.ToRemoteAssetUrl）。</summary>
+    public static string ToRemoteAssetUrl(string path)
+    {
+        if (string.IsNullOrEmpty(RemoteAssetUrl)) return path;
+        return RemoteAssetUrl.TrimEnd('/') + "/" + path.TrimStart('/');
+    }
+
+    /// <summary>拼接系统可读写热更文件路径。</summary>
+    public static string ToPersistentPathSys(string path) => PersistentPathSys + path;
+
+    /// <summary>按文件全路径确保目录存在。</summary>
+    public static void CreateDirectoryForFile(string filePath)
+    {
+        string dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir) && !Storage.Current.DirectoryExists(dir))
+            Storage.Current.CreateDirectory(dir);
     }
 }

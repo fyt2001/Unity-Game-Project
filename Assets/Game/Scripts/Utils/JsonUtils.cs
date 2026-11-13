@@ -3,6 +3,8 @@
 // =============================================================================
 // 来源: ShaoNvClient_H02 GoldenEngine.JsonUtils
 // 升级: 增加异步加载、对象池优化、异常安全
+// 多平台: 文件读写统一走 Storage.Current（默认 FileStorage = System.IO），
+//         微信小游戏注入 WX SDK 实现后本类无需改动。
 // =============================================================================
 
 using System;
@@ -39,7 +41,7 @@ public static class JsonUtils
     /// </summary>
     public static T LoadFromFile<T>(string filePath)
     {
-        if (!File.Exists(filePath))
+        if (!Storage.Current.FileExists(filePath))
         {
             DebugLogger.Error($"[JsonUtils] File not found: {filePath}");
             return default(T);
@@ -47,7 +49,7 @@ public static class JsonUtils
 
         try
         {
-            string jsonStr = File.ReadAllText(filePath);
+            string jsonStr = Storage.Current.ReadAllText(filePath);
             return Load<T>(jsonStr);
         }
         catch (Exception e)
@@ -84,12 +86,12 @@ public static class JsonUtils
         {
             string jsonStr = ToJson(obj, prettyPrint);
             string dir = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            if (!string.IsNullOrEmpty(dir) && !Storage.Current.DirectoryExists(dir))
             {
-                Directory.CreateDirectory(dir);
+                Storage.Current.CreateDirectory(dir);
             }
 
-            File.WriteAllText(filePath, jsonStr);
+            Storage.Current.WriteAllText(filePath, jsonStr);
         }
         catch (Exception e)
         {

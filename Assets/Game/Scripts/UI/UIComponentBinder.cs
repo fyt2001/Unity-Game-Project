@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using XLua;
 
 /// <summary>
@@ -60,6 +61,7 @@ public class UIComponentBinder : MonoBehaviour
         { typeof(RawImage),      "RawImg" },
         { typeof(Button),        "Btn" },
         { typeof(Text),          "Txt" },
+        { typeof(TMPro.TextMeshProUGUI), "Txt" },
         { typeof(ScrollRect),    "Srt" },
         { typeof(Slider),        "Sld" },
         { typeof(Scrollbar),     "Slb" },

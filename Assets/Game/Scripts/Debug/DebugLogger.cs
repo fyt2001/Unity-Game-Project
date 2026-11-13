@@ -29,7 +29,7 @@ public static class DebugLogger
         try
         {
             // 启动时清空旧日志，防止文件过大
-            File.WriteAllText(_logFilePath, $"=== Game Log Started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===\n");
+            Storage.Current.WriteAllText(_logFilePath, $"=== Game Log Started at {DateTime.Now:yyyy-MM-dd HH:mm:ss} ===\n");
 
             Application.logMessageReceived += (logStr, stackTrace, logType) =>
             {
@@ -38,7 +38,7 @@ public static class DebugLogger
                     string entry = $"[{logType}] {DateTime.Now:yyyy-MM-dd HH:mm:ss,fff} {logStr}\n";
                     if (!string.IsNullOrEmpty(stackTrace))
                         entry += $"  StackTrace: {stackTrace}\n";
-                    File.AppendAllText(_logFilePath, entry);
+                    Storage.Current.AppendAllText(_logFilePath, entry);
                 }
                 catch (IOException)
                 {
