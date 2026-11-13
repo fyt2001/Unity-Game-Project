@@ -18,6 +18,11 @@ function DamageSystem:Ctor()
 	self._playerViewChecked = false
 end
 
+--- 初始化伤害系统并注册统一死亡回调
+---@param playerController table
+---@param enemyManager table
+---@param onEnemyKilled function|nil function(enemyId, enemy)
+---@param onExpGained function|nil function(exp, enemy)
 function DamageSystem:Init(playerController, enemyManager, onEnemyKilled, onExpGained)
 	self.playerController = playerController
 	self.enemyManager = enemyManager

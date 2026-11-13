@@ -3,7 +3,7 @@
 WeaponSystem.lua
 =============================================================================
 Module:     Game/Battle/WeaponSystem
-Version:    1.1.0
+Version:    1.1.1
 
 Description:
 	武器系统。管理所有武器的自动攻击逻辑。
@@ -164,6 +164,10 @@ function WeaponSystem:Init(playerController)
 	self.playerController = playerController
 end
 
+--- 注入战斗依赖
+---@param bulletManager table
+---@param enemyManager table
+---@param damageSystem table
 function WeaponSystem:Inject(bulletManager, enemyManager, damageSystem)
 	self.bulletManager = bulletManager
 	self.enemyManager = enemyManager
