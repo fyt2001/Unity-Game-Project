@@ -1,49 +1,32 @@
-# 可信门禁 GitHub 版：待办（未落地）
+# 可信门禁 GitHub 版：现状
 
-状态：只有说明，还没落地。本机版见 `tools/trusted/verify_from_main.ps1`（2026-11-13）。
-本轮没有 push，没有装 gh，也没有建 `.github/workflows`，没有设分支保护。下面每一步都要用户单独决定。
+状态（2026-11-13，上海时间）：工作流和 CODEOWNERS 已在 `master`（`2411262`）。仓库已公开。`master` 已有分支保护：必须走 PR、需要 1 个批准、必须有 Code Owner 审核、禁止 force push 和删除；保留管理员绕过（仓库只有一人，关掉会导致自己的 PR 没人能批）。
 
-## 前提
-1. 用户决定 push 本地 master。本地 master 比 origin/master 领先若干提交，其中包括门禁提交。
-2. master 要先能单独通过门禁。现在 master 上的业务代码落后于工作区：基线和测试都是按工作区建的，所以在纯 master 上跑 `verify -Fast` 会判红（L1 有 5 条，scan 有 new=43 条，lua 测试失败）。业务改动进 master 以后，CI 才会是绿的。
-3. C# 测试和 Harness（`Assets/Editor/Tests/**`、`Assets/Editor/AgentHarness/**`、`LuaFieldReader.cs`）还没进 master：它们依赖的 HomeSceneBootstrapper、Game.Security、Game.LocalBackend、PlatformUIEventChecks 等都没提交。要等业务代码一起进。
+`trusted-gate` 还不是 required check：该工作流从未在 PR 上跑过，GitHub 的状态检查选择器里还没有这项。本 PR 用来跑一次检查；通过后再把它补进保护规则。
 
-## 工作流草案（`.github/workflows/trusted-gate.yml`，待写）
-- 触发：用 `pull_request`，目标分支是 master。
-- 两份 checkout：
-  - 被检查对象：`actions/checkout`，`ref: ${{ github.event.pull_request.head.sha }}`，放到 `target/`。
-  - 可信副本：`actions/checkout`，`ref: ${{ github.event.pull_request.base.sha }}`，放到 `trusted/`。
-- 用 `trusted/tools/verify.ps1 -Fast -ProjectRoot target -OutDir out/static` 跑静态门禁，换成 runner 上可用的 shell 和路径。
-- GATE-TAMPER：用 `git diff --name-status base...head` 匹配 `trusted/tools/trusted/protected_paths.txt`，逻辑和本机版一致。碰到受保护路径就失败，并要求人工审核。
-- 要不要用 `pull_request_target`：它用 base 分支上的 workflow 定义，有 secrets 和写权限，所以绝对不能执行 PR 里的代码。这里只读 PR 文件做静态扫描，也必须锁死 `permissions: contents: read`，并且不传 secrets。默认先用 `pull_request` 加上面的“base 检出到 trusted/”。PR 改 workflow 文件本身的风险由 CODEOWNERS 和分支保护兜底。
-- 待核：GitHub 托管 Windows runner 上有没有 luacheck 和 lua，或者改用 ubuntu runner；那样 verify.ps1 需要 pwsh 兼容（本机只有 PowerShell 5.1）。
-- `../tests/*.lua` 在 `My project` 仓库外面（属于上级目录的另一个仓库），CI 拿不到。要么先迁进 `My project/tests/`，要么在 CI 里把它们标成 SKIP 并说明原因。
+本机 runner 仍见 `tools/trusted/verify_from_main.ps1`。
 
-## CODEOWNERS（`.github/CODEOWNERS`，待写）
-```
-/tools/            @fyt2001
-/.luacheckrc       @fyt2001
-/AGENTS.md         @fyt2001
-/tests/            @fyt2001
-/Assets/Editor/Tests/        @fyt2001
-/Assets/Editor/AgentHarness/ @fyt2001
-/.codebuddy/rules/ @fyt2001
-/.github/          @fyt2001
-```
+## 已落地
 
-## 分支保护（master，待设）
-- PR 必须通过 required status check `trusted-gate`。
-- 必须有 Code Owner 审核（Require review from Code Owners）。
-- 禁止 force push，禁止删除分支；管理员是否也受约束由用户决定。
-- 待核：仓库 `fyt2001/Unity-Game-Project` 如果是私有仓库，免费计划下分支保护和 CODEOWNERS 强制审核可能用不了，要看当前 GitHub 计划。
+- 工作流：`.github/workflows/trusted-gate.yml`（`pull_request` 到 `master`；`permissions: contents: read`；`windows-latest`；从 base 取出 `verify_from_main.ps1` 再对 head 检查）。
+- CODEOWNERS：`/tools/`、`/.luacheckrc`、`/AGENTS.md`、`/tests/`、`/Assets/Editor/Tests/`、`/Assets/Editor/AgentHarness/`、`/.codebuddy/rules/`、`/.github/` 归 `@fyt2001`。
+- Lua 回归测试已迁进仓库 `tests/`，`tools/lua_tests.json` 已指向这些路径。
+- 分支保护规则：https://github.com/fyt2001/Unity-Game-Project/settings/branch_protection_rules/86284936
 
-## Unity 测试
-- EditMode 和 PlayMode（Harness）留在本机跑：`verify_from_main.ps1 -Unity`，或者 `tools/verify.ps1 -Full`。CI 上跑 Unity 要 license 和 Library 缓存，成本高，这轮不做。
+## 本 PR 之后还要做
 
-## 第 4 步（不在本轮）
-- 统计回滚，再考虑自动批准。
+- 等本 PR 的 `trusted-gate` 跑完，把同名检查设为 required。
+- 在此之前，合并不会被这项检查拦住。
 
-## CI 范围（2026-11-13 补充）
-- CI 只跑 lint/静态门禁（GATE-TAMPER、luacheck、lua_layers、扫描器、能离线跑的 Lua 测试）和 EditMode。两者都**不依赖中文 SDF 字体**（`AlibabaPuHuiTiSDF.asset` 不入库，见 `Docs/字体重新生成.md`），也不依赖真实 Lua 保护密钥（仓库里只放空值）。
-- 依据：2026-11-13 在一个干净 worktree 里检出 master，里面没有 SDF 字体、密钥为空，跑 EditMode 的结果是 20 个用例，19 个通过、0 个失败、1 个跳过。跳过的是隔离名单里的 gm_s01。
-- EditMode 上 CI 需要 Unity license，目前仍在本机跑。PlayMode Harness 会渲染 UI，不在 CI 范围内。
+## Unity 测试（仍在本机）
+
+- EditMode / PlayMode 不进 CI（需要 license）。完整核验曾到 `5eebac4`：EditMode 20 用例 19 通过、1 隔离跳过 `Lua_gm_s01`，PlayMode 通过。
+
+## 不要入库
+
+- 本地已填的 `Assets/Game/Scripts/Security/LuaProtectionKeys.cs`（仓库里只保留空值）。
+- 大字体等未跟踪资源。
+
+## 第 4 步（仍不做）
+
+- 统计回滚后再考虑自动批准。
