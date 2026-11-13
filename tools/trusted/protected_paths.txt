@@ -14,3 +14,5 @@ Assets/Editor/AgentHarness/**
 Assets/Editor/AgentHarness.meta
 .codebuddy/rules/**
 .github/**
+.gitignore
+Packages/manifest.json
