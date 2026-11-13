@@ -16,31 +16,46 @@ This directory contains a production-style Lua UI framework skeleton for Unity +
 ```text
 Framework/UI
 ├── Animation
+├── Base
+├── Block
 ├── Cache
+├── Component
 ├── Config
 ├── Core
 ├── Event
 ├── Layer
 ├── Manager
 ├── Resource
-├── Sample
+├── Sample        (仅供写法参考；无对应 prefab，不可运行)
 ├── Utils
-└── Zone
+├── Zone
+├── UI编码规范.md
+├── UIFramework.lua   (框架统一入口)
+└── README.md
 ```
 
 ## Basic Usage
 
 ```lua
-local UIFramework = require "Framework.UI.UIFramework"
-local manager = UIFramework.Create()
+local UI = require "Framework.UI.UIFramework"
+local manager = UI.Create()
 
-local RegisterSample = require "Framework.UI.Sample.RegisterSample"
-RegisterSample(UIFramework.UIWindowConfig)
+-- 窗口注册：每个窗口一个 RegisterXxx(uiManager) 脚本，由 GameMain 统一调用。
+-- 活模板（可直接照抄）：
+--   Game/UI/Dungeon/RegisterFloorEventPopup.lua
+--   Game/UI/Dungeon/RegisterRunResultPanel.lua
+local RegisterFloorEventPopup = require "Game.UI.Dungeon.RegisterFloorEventPopup"
+RegisterFloorEventPopup(manager)
 
-manager:Open("SampleBag", 1)
-manager:Refresh("SampleBag", { 1001, 1002 })
-manager:Close("SampleBag")
+manager:Open("FloorEventPopup", "标题", "正文")
+manager:Refresh("FloorEventPopup")
+manager:Close("FloorEventPopup")
 ```
+
+> 注意：`Framework/UI/Sample/` 下的 SampleBag 四件套是**纸质模板**——
+> 类写法正确（`Class.Define` + `Class.Extend`），但工程内没有
+> `Resources/UI/SampleBag.prefab`，注册后也无法 `Open`。新窗口请照抄上面两个
+> 活模板，不要再照抄 SampleBag。
 
 ## Public API
 

@@ -9,27 +9,27 @@ Status:     Frozen (Public API)
 Target:     Unity + XLua
 
 Description:
-    UIFramework 是 UI 框架的统一入口模块，游戏代码应通过此模块访问框架
-    功能，而不是直接引用内部管理器。
+	UIFramework 是 UI 框架的统一入口模块，游戏代码应通过此模块访问框架
+	功能，而不是直接引用内部管理器。
 
-    提供：
-        - 框架核心模块引用（Class、Logger、UIEnums 等）
-        - UIManager 工厂方法（Create）
-        - 配置注册辅助方法
+	提供：
+		- 框架核心模块引用（Class、Logger、UIEnums 等）
+		- UIManager 工厂方法（Create）
+		- 配置注册辅助方法
 
-    设计原则：
-        - 单一入口：游戏代码只依赖 UIFramework
-        - 内部模块可替换：不暴露内部模块路径给游戏代码
-        - 版本管理：框架版本号便于追踪兼容性
+	设计原则：
+		- 单一入口：游戏代码只依赖 UIFramework
+		- 内部模块可替换：不暴露内部模块路径给游戏代码
+		- 版本管理：框架版本号便于追踪兼容性
 
 Dependencies:
-    - 所有框架核心模块
+	- 所有框架核心模块
 
 Usage:
-    local UI = require "Framework.UI.UIFramework"
-    local uiManager = UI.Create()
-    uiManager:RegisterConfig("Bag", { ... })
-    uiManager:Open("Bag", bagId)
+	local UI = require "Framework.UI.UIFramework"
+	local uiManager = UI.Create()
+	uiManager:RegisterWindow("Bag", { ... })
+	uiManager:Open("Bag", bagId)
 =============================================================================
 ]]
 
@@ -45,7 +45,7 @@ UIFramework.Version = "3.0.0"
 -- 核心模块引用
 -- =============================================================================
 
-UIFramework.Class = require "Framework.UI.Utils.Class"
+UIFramework.Class = require "Framework.Core.Class"
 UIFramework.Logger = require "Framework.UI.Utils.Logger"
 UIFramework.TableUtil = require "Framework.UI.Utils.TableUtil"
 
@@ -70,7 +70,7 @@ UIFramework.UIManager = require "Framework.UI.Manager.UIManager"
 ---@param options table|nil 配置选项 { resourceLoader, animationManager, blockView }
 ---@return table manager UIManager 实例
 function UIFramework.Create(options)
-    return UIFramework.UIManager.New(options)
+	return UIFramework.UIManager.New(options)
 end
 
 return UIFramework

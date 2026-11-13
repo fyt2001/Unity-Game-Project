@@ -3,164 +3,165 @@
 UIView.lua
 =============================================================================
 Module:     Framework/UI/Core/UIView
-Version:    3.0.0
+Version:    4.0.0（对齐 ShaoNvClient_H02：UIView 继承 UIBaseContainer 组件容器）
 Author:     Framework Team
 Status:     Frozen (Public API)
 Target:     Unity + XLua
 
 Description:
-    UIView 是所有 UI 视图的基类，负责 UI 组件绑定和用户输入转发。
-    它了解 Unity Widget 和视觉节点，但禁止发送网络请求、修改全局游戏数据
-    或控制层级。
+	UIView 是所有 UI 视图的基类，继承 H02 的 UIBaseContainer，因此它本身就是一个
+	组件容器：在 OnCreate 中使用 self:AddComponent(UIButton/UIText/UIImage/UINode, path)
+	绑定子组件，销毁（OnDestroy）时自动遍历 Delete 所有子组件（触发 __delete -> OnDestroy，
+	子组件在此清理点击监听等），与 H02 生命周期完全一致。
 
-    业务 View 继承 UIView，在 OnCreate 中绑定 UI 组件（Button、Text、Image 等），
-    在 OnRefresh 中更新 UI 显示，用户交互通过 Controller 转发处理。
+	View 构造签名对齐 H02 组件容器：__init(holder, var_arg)
+		holder = window（窗口容器），var_arg = gameObject（根节点）
 
 Dependencies:
-    - Class (类系统)
+	- BaseClass（OOP 系统，对齐 H02）
+	- UIBaseContainer / UIBaseComponent（组件容器 / 组件基类）
 
-Lifecycle Callbacks:
-    OnCreate()      - 一次性绑定 UI 组件
-    OnOpen(...)     - 打开时初始化 UI 状态
-    OnRefresh(...)  - 数据刷新时更新 UI 显示
-    OnFocus()       - 获得输入焦点时
-    OnBlur()        - 失去输入焦点时
-    OnHide()        - 被隐藏时
-    OnClose()       - 关闭前清理
-    OnDestroy()     - 销毁前释放引用
-
-Usage:
-    local SampleBagView = Class.Define("SampleBagView", UIView)
-    function SampleBagView:OnCreate()
-        -- 绑定 UI 组件
-        self.closeButton = self.gameObject:Find("CloseButton")
-    end
+Lifecycle Callbacks（由 UIWindow 调用）:
+	OnCreate()      - 一次性绑定 UI 组件
+	OnOpen(...)     - 打开时初始化 UI 状态
+	OnRefresh(...)  - 数据刷新时更新 UI 显示
+	OnFocus()       - 获得输入焦点时
+	OnBlur()        - 失去输入焦点时
+	OnHide()        - 被隐藏时
+	OnClose()       - 关闭前清理
+	OnDestroy()     - 销毁前释放引用（由 UIBaseContainer 自动 Delete 子组件）
 =============================================================================
 ]]
 
-local Class = require "Framework.UI.Utils.Class"
+local BaseClass = require "Framework.UI.Utils.BaseClass"
+local UIBaseContainer = require "Framework.UI.Base.UIBaseContainer"
+local Logger = require "Framework.UI.Utils.Logger"
 
-local UIView = Class.Define("UIView")
+local UIView = BaseClass("UIView", UIBaseContainer)
+local base = UIBaseContainer
 
 -- =============================================================================
--- 构造函数
+-- 构造函数（对齐 H02 组件容器 __init(holder, var_arg)）
+-- UIBaseComponent.__init 已在 BaseClass 创建链中执行（holder=window, var_arg=gameObject）
 -- =============================================================================
 
----初始化 View 标识和 Unity 引用
----子类重写 Ctor 时必须调用父类 Ctor
----@param windowName string 所属 Window 名称
----@param gameObject any Unity GameObject 或适配器对象
-function UIView:Ctor(windowName, gameObject)
-    self.windowName = windowName
-    self.gameObject = gameObject
-    self.controller = nil
-    self.visible = true
-    self.isCreated = false
+---@param window table 所属 UIWindow（作为容器持有者 holder）
+---@param gameObject any Unity GameObject 根节点
+function UIView:__init(window, gameObject)
+	self.windowName = window and window:GetName() or ""
+	self.controller = nil
+	self.visible = true
+	self.isCreated = false
 end
 
 -- =============================================================================
--- 公共 API：绑定
+-- 公共 API：绑定 / 引用
 -- =============================================================================
 
 ---绑定 Controller（由 UIWindow:BindMVC 在创建时调用）
----@param controller table Controller 实例
 function UIView:BindController(controller)
-    self.controller = controller
+	self.controller = controller
 end
 
----获取绑定的 Controller
----@return table|nil controller
 function UIView:GetController()
-    return self.controller
+	return self.controller
 end
 
----获取绑定的 GameObject
----@return any|nil gameObject
 function UIView:GetGameObject()
-    return self.gameObject
+	return self.gameObject
 end
 
----获取 Transform
----@return any|nil transform
 function UIView:GetTransform()
-    return self.gameObject and self.gameObject.transform or nil
+	return self.transform
 end
 
----获取所属 Window 名称
----@return string windowName
+-- =============================================================================
+-- 公共 API：动静分离（参考 H02：UIValentineChocolateProgressItem.lua 给 Slider 节点
+-- AddComponent(Canvas) + overrideSorting=true，隔离频繁重建元素，避免污染整个窗口合批）
+--
+-- 原理：在频繁更新的 UI 节点（Slider / 计时文本 / 滚动列表项 / 飘字根）上挂一个
+-- 嵌套 Canvas，该子树会作为独立 Canvas 单独合批与重建，父窗口其余静态内容不受影响。
+--
+-- 本项目无自定义 sorting layer（UI 全在 Default 层，挂在 layer Canvas 之下），为避免分层回归：
+--   - 不传 sortingOrder：嵌套 Canvas 继承父级排序，渲染位置不变（最安全，推荐默认）；
+--   - 传了 sortingOrder：对齐 H02，设 overrideSorting=true 并用指定排序值（用于需要
+--     主动控制层级的场景，注意会进入 Default 层全局排序，值需 > 所在 layer 的 order）。
+--
+--@param go UnityEngine.GameObject 需要隔离重建的动态节点
+--@param sortingOrder number|nil 可选，显式排序值（启用 overrideSorting）
+--@return UnityEngine.Canvas|nil canvas
+function UIView:AddDynamicCanvas(go, sortingOrder)
+	if not go then return nil end
+	local canvas = go:AddComponent(typeof(Unity_Canvas))
+	if sortingOrder then
+		canvas.overrideSorting = true
+		canvas.sortingOrder = sortingOrder
+	end
+	return canvas
+end
+
+---查找子节点对应的 GameObject（用于没有组件语义的纯节点）
+function UIView:FindGameObject(path)
+	if not self.gameObject then return nil end
+	local transform = self.gameObject.transform
+	if path and path ~= "" then
+		transform = transform:Find(path)
+	end
+	return transform and transform.gameObject or nil
+end
+
 function UIView:GetWindowName()
-    return self.windowName
+	return self.windowName
 end
 
 -- =============================================================================
 -- 公共 API：可见性
 -- =============================================================================
 
----设置 View 的可见性
----@param visible boolean 是否可见
 function UIView:SetVisible(visible)
-    self.visible = visible
-    if self.gameObject and self.gameObject.SetActive then
-        self.gameObject:SetActive(visible)
-    end
+	self.visible = visible
+	if self.gameObject and self.gameObject.SetActive then
+		self:SetActive(visible)
+	end
 end
 
----返回 View 是否可见
----@return boolean visible
 function UIView:IsVisible()
-    return self.visible
+	return self.visible
 end
 
 -- =============================================================================
--- 生命周期回调
--- 子类重写这些方法以实现具体 UI 逻辑
+-- 生命周期回调（子类重写这些实现具体 UI 逻辑）
+-- 注意：子类 OnCreate 必须首先调用 base.OnCreate(self) 以解析 transform 并注册容器
 -- =============================================================================
 
----一次性创建回调：绑定 UI 组件、注册 UI 事件
----在此方法中查找并缓存 Widget 引用（Button、Text、Image 等）
----禁止在此方法中发送网络请求或修改全局数据
 function UIView:OnCreate()
-    self.isCreated = true
+	base.OnCreate(self)   -- 基类 UIBaseContainer.OnCreate 已执行 BindLuaUIComp + AutoBind
+	self.isCreated = true
 end
 
----打开回调：初始化 UI 状态
----在此方法中根据打开参数设置 UI 初始状态
----@param ... any 打开参数
 function UIView:OnOpen(...)
 end
 
----刷新回调：更新 UI 显示
----在此方法中根据最新的 Model 数据更新 UI 组件
----@param ... any 刷新参数
 function UIView:OnRefresh(...)
 end
 
----焦点回调：当 View 获得输入焦点时调用
----可在此方法中启用输入监听、显示焦点指示器等
 function UIView:OnFocus()
 end
 
----失焦回调：当 View 失去输入焦点时调用
----可在此方法中禁用输入监听、隐藏焦点指示器等
 function UIView:OnBlur()
 end
 
----隐藏回调：当 View 被隐藏时调用
----可在此方法中暂停动画、关闭音效等
 function UIView:OnHide()
 end
 
----关闭回调：在关闭动画之前调用
----可在此方法中保存临时状态、取消订阅等
 function UIView:OnClose()
 end
 
----销毁回调：在释放引用之前调用
----必须在此方法中释放所有 Widget 引用和事件订阅
 function UIView:OnDestroy()
-    self.controller = nil
-    self.gameObject = nil
-    self.isCreated = false
+	base.OnDestroy(self)
+	self.controller = nil
+	self.gameObject = nil
+	self.isCreated = false
 end
 
 return UIView

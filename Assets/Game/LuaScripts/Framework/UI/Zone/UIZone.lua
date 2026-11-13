@@ -9,23 +9,23 @@ Status:     Frozen (Public API)
 Target:     Unity + XLua
 
 Description:
-    UIZone 是所有 Zone 的基础实现，负责将窗口分组并应用焦点/可见性策略。
-    每个 Zone 维护一个窗口列表，Zone 聚焦时顶部窗口获得焦点，其他窗口隐藏。
+	UIZone 是所有 Zone 的基础实现，负责将窗口分组并应用焦点/可见性策略。
+	每个 Zone 维护一个窗口列表，Zone 聚焦时顶部窗口获得焦点，其他窗口隐藏。
 
-    特化 Zone 应继承 UIZone 并重写策略方法（CanFocus、Focus、Blur）。
+	特化 Zone 应继承 UIZone 并重写策略方法（CanFocus、Focus、Blur）。
 
 Dependencies:
-    - Class (类系统)
-    - TableUtil (表工具)
+	- Class (类系统)
+	- TableUtil (表工具)
 
 Usage:
-    local zone = UIZone.New("ShopZone")
-    zone:AddWindow(window)
-    zone:Focus()
+	local zone = UIZone.New("ShopZone")
+	zone:AddWindow(window)
+	zone:Focus()
 =============================================================================
 ]]
 
-local Class = require "Framework.UI.Utils.Class"
+local Class = require "Framework.Core.Class"
 local TableUtil = require "Framework.UI.Utils.TableUtil"
 
 local UIZone = Class.Define("UIZone")
@@ -37,9 +37,9 @@ local UIZone = Class.Define("UIZone")
 ---初始化 Zone 名称和窗口列表
 ---@param name string Zone 名称，用于日志
 function UIZone:Ctor(name)
-    self.name = name or "Zone"
-    self.windows = {}
-    self.focused = false
+	self.name = name or "Zone"
+	self.windows = {}
+	self.focused = false
 end
 
 -- =============================================================================
@@ -49,13 +49,13 @@ end
 ---返回 Zone 名称
 ---@return string name
 function UIZone:GetName()
-    return self.name
+	return self.name
 end
 
 ---返回 Zone 内窗口数量
 ---@return number count
 function UIZone:GetWindowCount()
-    return #self.windows
+	return #self.windows
 end
 
 -- =============================================================================
@@ -67,29 +67,29 @@ end
 ---如果 Zone 已聚焦，新窗口自动获得焦点
 ---@param window table UIWindow 实例
 function UIZone:AddWindow(window)
-    if TableUtil.IndexOf(self.windows, window) then
-        return
-    end
-    self.windows[#self.windows + 1] = window
-    window:SetOwnerZone(self)
+	if TableUtil.IndexOf(self.windows, window) then
+		return
+	end
+	self.windows[#self.windows + 1] = window
+	window:SetOwnerZone(self)
 
-    -- 如果 Zone 已聚焦，新窗口自动获得焦点
-    if self.focused and (window:IsOpened() or window:IsHidden()) then
-        window:Focus()
-    elseif window:IsOpened() then
-        window:Hide()
-    end
+	-- 如果 Zone 已聚焦，新窗口自动获得焦点
+	if self.focused and (window:IsOpened() or window:IsHidden()) then
+		window:Focus()
+	elseif window:IsOpened() then
+		window:Hide()
+	end
 end
 
 ---从 Zone 中移除窗口
 ---@param window table UIWindow 实例
 ---@return boolean removed 是否成功移除
 function UIZone:RemoveWindow(window)
-    local removed = TableUtil.RemoveValue(self.windows, window)
-    if removed then
-        window:SetOwnerZone(nil)
-    end
-    return removed
+	local removed = TableUtil.RemoveValue(self.windows, window)
+	if removed then
+		window:SetOwnerZone(nil)
+	end
+	return removed
 end
 
 -- =============================================================================
@@ -99,7 +99,7 @@ end
 ---判断 Zone 是否有效（至少有一个窗口）
 ---@return boolean valid
 function UIZone:IsValid()
-    return #self.windows > 0
+	return #self.windows > 0
 end
 
 ---判断 Zone 是否可以接收焦点
@@ -107,13 +107,13 @@ end
 ---子类可重写以改变行为
 ---@return boolean focusable
 function UIZone:CanFocus()
-    return self:IsValid()
+	return self:IsValid()
 end
 
 ---判断 Zone 是否已聚焦
 ---@return boolean focused
 function UIZone:IsFocused()
-    return self.focused
+	return self.focused
 end
 
 -- =============================================================================
@@ -122,24 +122,24 @@ end
 
 ---聚焦 Zone，顶部窗口获得焦点，其余窗口隐藏
 function UIZone:Focus()
-    self.focused = true
-    for index, window in ipairs(self.windows) do
-        if index == #self.windows and (window:IsOpened() or window:IsHidden()) then
-            window:Focus()
-        elseif window:IsOpened() then
-            window:Hide()
-        end
-    end
+	self.focused = true
+	for index, window in ipairs(self.windows) do
+		if index == #self.windows and (window:IsOpened() or window:IsHidden()) then
+			window:Focus()
+		elseif window:IsOpened() then
+			window:Hide()
+		end
+	end
 end
 
 ---失焦 Zone，隐藏所有窗口
 function UIZone:Blur()
-    self.focused = false
-    for _, window in ipairs(self.windows) do
-        if window:IsOpened() then
-            window:Hide()
-        end
-    end
+	self.focused = false
+	for _, window in ipairs(self.windows) do
+		if window:IsOpened() then
+			window:Hide()
+		end
+	end
 end
 
 -- =============================================================================
@@ -149,17 +149,17 @@ end
 ---从顶部到底部关闭所有窗口
 ---@param reason string|nil 关闭原因
 function UIZone:CloseAll(reason)
-    for index = #self.windows, 1, -1 do
-        local window = self.windows[index]
-        self:RemoveWindow(window)
-        window:Close(reason or "ZoneCloseAll")
-    end
+	for index = #self.windows, 1, -1 do
+		local window = self.windows[index]
+		self:RemoveWindow(window)
+		window:Close(reason or "ZoneCloseAll")
+	end
 end
 
 ---返回 Zone 顶部窗口
 ---@return table|nil window
 function UIZone:GetTopWindow()
-    return self.windows[#self.windows]
+	return self.windows[#self.windows]
 end
 
 return UIZone

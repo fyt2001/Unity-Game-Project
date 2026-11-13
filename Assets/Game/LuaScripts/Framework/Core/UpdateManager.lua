@@ -9,15 +9,15 @@ Status:     Frozen (Public API)
 Target:     Unity + XLua
 
 Description:
-    帧更新管理器，驱动所有需要每帧更新的模块（Timer、Battle等）。
-    提供 Update / LateUpdate / FixedUpdate 三种更新回调注册。
+	帧更新管理器，驱动所有需要每帧更新的模块（Timer、Battle等）。
+	提供 Update / LateUpdate / FixedUpdate 三种更新回调注册。
 
 Usage:
-    local UpdateManager = require "Framework.Core.UpdateManager"
-    local um = UpdateManager.GetInstance()
-    
-    um:AddUpdate(function(dt) ... end, self)       -- 注册
-    um:RemoveUpdateByTarget(self)                    -- 批量移除
+	local UpdateManager = require "Framework.Core.UpdateManager"
+	local um = UpdateManager.GetInstance()
+	
+	um:AddUpdate(function(dt) ... end, self)       -- 注册
+	um:RemoveUpdateByTarget(self)                    -- 批量移除
 =============================================================================
 ]]
 
@@ -28,90 +28,132 @@ local UpdateManager = Class.Define("UpdateManager")
 Class.Extend(UpdateManager, Singleton)
 
 function UpdateManager:Ctor()
-    self._updates = {}          -- { {callback, target} }
-    self._lateUpdates = {}
-    self._fixedUpdates = {}
+	self._updates = {}          -- { {callback, target} }
+	self._lateUpdates = {}
+	self._fixedUpdates = {}
+	self._updateIdCounter = 0
+	self._lateUpdateIdCounter = 0
+	self._fixedUpdateIdCounter = 0
 end
 
 ---注册 Update 回调
 ---@param callback function(dt) dt为秒
 ---@param target any 目标对象（用于批量移除）
+---@return number updateId 用于 RemoveUpdate 移除
 function UpdateManager:AddUpdate(callback, target)
-    table.insert(self._updates, { callback = callback, target = target })
+	local id = self._updateIdCounter or 0
+	self._updateIdCounter = id + 1
+	table.insert(self._updates, { id = id, callback = callback, target = target })
+	return id
 end
 
 ---注册 LateUpdate 回调
 ---@param callback function(dt)
 ---@param target any
+---@return number updateId
 function UpdateManager:AddLateUpdate(callback, target)
-    table.insert(self._lateUpdates, { callback = callback, target = target })
+	local id = self._lateUpdateIdCounter
+	self._lateUpdateIdCounter = id + 1
+	table.insert(self._lateUpdates, { id = id, callback = callback, target = target })
+	return id
 end
 
 ---注册 FixedUpdate 回调
 ---@param callback function(dt)
 ---@param target any
+---@return number updateId
 function UpdateManager:AddFixedUpdate(callback, target)
-    table.insert(self._fixedUpdates, { callback = callback, target = target })
+	local id = self._fixedUpdateIdCounter
+	self._fixedUpdateIdCounter = id + 1
+	table.insert(self._fixedUpdates, { id = id, callback = callback, target = target })
+	return id
+end
+
+---按 ID 移除单个 Update 回调
+---@param updateId number AddUpdate 返回的 ID
+function UpdateManager:RemoveUpdate(updateId)
+	self:_removeById(self._updates, updateId)
+end
+
+---按 ID 移除单个 LateUpdate 回调
+---@param updateId number
+function UpdateManager:RemoveLateUpdate(updateId)
+	self:_removeById(self._lateUpdates, updateId)
+end
+
+---按 ID 移除单个 FixedUpdate 回调
+---@param updateId number
+function UpdateManager:RemoveFixedUpdate(updateId)
+	self:_removeById(self._fixedUpdates, updateId)
 end
 
 ---移除某对象的所有更新回调
 ---@param target any
 function UpdateManager:RemoveUpdateByTarget(target)
-    self:_removeByTarget(self._updates, target)
-    self:_removeByTarget(self._lateUpdates, target)
-    self:_removeByTarget(self._fixedUpdates, target)
+	self:_removeByTarget(self._updates, target)
+	self:_removeByTarget(self._lateUpdates, target)
+	self:_removeByTarget(self._fixedUpdates, target)
+end
+
+function UpdateManager:_removeById(list, id)
+	for i = #list, 1, -1 do
+		if list[i].id == id then
+			table.remove(list, i)
+			return
+		end
+	end
 end
 
 function UpdateManager:_removeByTarget(list, target)
-    for i = #list, 1, -1 do
-        if list[i].target == target then
-            table.remove(list, i)
-        end
-    end
+	for i = #list, 1, -1 do
+		if list[i].target == target then
+			table.remove(list, i)
+		end
+	end
 end
 
 ---每帧调用（由 C# 层驱动）
 ---@param dt number 秒
 function UpdateManager:OnUpdate(dt)
-    for i = 1, #self._updates do
-        local entry = self._updates[i]
-        if entry.callback then
-            entry.callback(dt)
-        end
-    end
+	for i = #self._updates, 1, -1 do
+		local entry = self._updates[i]
+		if entry and entry.callback then
+			entry.callback(dt)
+		end
+	end
 end
 
 ---每帧调用（由 C# 层驱动）
 ---@param dt number 秒
 function UpdateManager:OnLateUpdate(dt)
-    for i = 1, #self._lateUpdates do
-        local entry = self._lateUpdates[i]
-        if entry.callback then
-            entry.callback(dt)
-        end
-    end
+	for i = #self._lateUpdates, 1, -1 do
+		local entry = self._lateUpdates[i]
+		if entry and entry.callback then
+			entry.callback(dt)
+		end
+	end
 end
 
 ---固定帧调用（由 C# 层驱动）
 ---@param dt number 秒
 function UpdateManager:OnFixedUpdate(dt)
-    for i = 1, #self._fixedUpdates do
-        local entry = self._fixedUpdates[i]
-        if entry.callback then
-            entry.callback(dt)
-        end
-    end
+	for i = #self._fixedUpdates, 1, -1 do
+		local entry = self._fixedUpdates[i]
+		if entry and entry.callback then
+			entry.callback(dt)
+		end
+	end
 end
 
 ---清空所有
 function UpdateManager:ClearAll()
-    self._updates = {}
-    self._lateUpdates = {}
-    self._fixedUpdates = {}
+	self._updates = {}
+	self._lateUpdates = {}
+	self._fixedUpdates = {}
 end
 
 function UpdateManager:Delete()
-    self:ClearAll()
+	self:ClearAll()
 end
 
 return UpdateManager

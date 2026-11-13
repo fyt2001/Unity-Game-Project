@@ -9,32 +9,32 @@ Status:     Frozen (Public API)
 Target:     Unity + XLua
 
 Description:
-    UIWindowFactory 负责创建 UIWindow 实例及其 MVC 组件。
-    工厂不打开、关闭、缓存或聚焦窗口，只负责实例化和绑定。
+	UIWindowFactory 负责创建 UIWindow 实例及其 MVC 组件。
+	工厂不打开、关闭、缓存或聚焦窗口，只负责实例化和绑定。
 
-    创建流程：
-        1. 创建 UIWindow 实例
-        2. 从配置中解析 MVC 类路径
-        3. 实例化 Model -> Controller -> View
-        4. 绑定 Unity GameObject 到 Window
-        5. 绑定 MVC 到 Window（建立双向引用）
+	创建流程：
+		1. 创建 UIWindow 实例
+		2. 从配置中解析 MVC 类路径
+		3. 实例化 Model -> Controller -> View
+		4. 绑定 Unity GameObject 到 Window
+		5. 绑定 MVC 到 Window（建立双向引用）
 
 Dependencies:
-    - Class (类系统)
-    - UIWindow (窗口基类)
-    - UIView (视图基类)
-    - UIController (控制器基类)
-    - UIModel (模型基类)
-    - UIResourceLoader (资源加载器)
+	- Class (类系统)
+	- UIWindow (窗口基类)
+	- UIView (视图基类)
+	- UIController (控制器基类)
+	- UIModel (模型基类)
+	- UIResourceLoader (资源加载器)
 
 Usage:
-    local factory = UIWindowFactory.New(resourceLoader)
-    local window = factory:CreateWindow("Bag", config)
-    factory:CreateMVC(window, gameObject)
+	local factory = UIWindowFactory.New(resourceLoader)
+	local window = factory:CreateWindow("Bag", config)
+	factory:CreateMVC(window, gameObject)
 =============================================================================
 ]]
 
-local Class = require "Framework.UI.Utils.Class"
+local Class = require "Framework.Core.Class"
 local UIWindow = require "Framework.UI.Core.UIWindow"
 local UIView = require "Framework.UI.Core.UIView"
 local UIController = require "Framework.UI.Core.UIController"
@@ -49,7 +49,7 @@ local UIWindowFactory = Class.Define("UIWindowFactory")
 ---初始化工厂依赖
 ---@param resourceLoader table UIResourceLoader 实例
 function UIWindowFactory:Ctor(resourceLoader)
-    self.resourceLoader = resourceLoader
+	self.resourceLoader = resourceLoader
 end
 
 -- =============================================================================
@@ -62,18 +62,18 @@ end
 ---@param fallback table 默认基类
 ---@return table class 类表
 local function ResolveClass(modulePath, fallback)
-    if not modulePath or modulePath == "" then
-        return fallback
-    end
-    local ok, result = pcall(require, modulePath)
-    if not ok then
-        error(string.format(
-            "Failed to require UI module: %s\n%s",
-            tostring(modulePath),
-            tostring(result)
-        ), 3)
-    end
-    return result
+	if not modulePath or modulePath == "" then
+		return fallback
+	end
+	local ok, result = pcall(require, modulePath)
+	if not ok then
+		error(string.format(
+			"Failed to require UI module: %s\n%s",
+			tostring(modulePath),
+			tostring(result)
+		), 3)
+	end
+	return result
 end
 
 -- =============================================================================
@@ -85,7 +85,7 @@ end
 ---@param config table 窗口配置
 ---@return table window UIWindow 实例
 function UIWindowFactory:CreateWindow(name, config)
-    return UIWindow.New(name, config)
+	return UIWindow.New(name, config)
 end
 
 ---创建 MVC 实例并绑定到窗口
@@ -94,21 +94,24 @@ end
 ---@param window table UIWindow 实例
 ---@param gameObject any Unity GameObject
 function UIWindowFactory:CreateMVC(window, gameObject)
-    local config = window:GetConfig()
+	local config = window:GetConfig()
 
-    -- 解析类
-    local ModelClass = ResolveClass(config.model, UIModel)
-    local ControllerClass = ResolveClass(config.controller, UIController)
-    local ViewClass = ResolveClass(config.view, UIView)
+	-- 解析类
+	local ModelClass = ResolveClass(config.model, UIModel)
+	local ControllerClass = ResolveClass(config.controller, UIController)
+	local ViewClass = ResolveClass(config.view, UIView)
 
-    -- 创建 MVC 实例
-    local model = ModelClass.New(window:GetName())
-    local controller = ControllerClass.New(model)
-    local view = ViewClass.New(window:GetName(), gameObject)
+	-- 绑定到窗口（必须先于 View 创建：UIBaseComponent.__init 断言 holder.transform 非空）
+	window:AttachGameObject(gameObject)
 
-    -- 绑定到窗口
-    window:AttachGameObject(gameObject)
-    window:BindMVC(view, controller, model)
+	-- 创建 MVC 实例
+	-- 注意：View 的构造签名对齐 H02 组件容器 __init(holder, var_arg)
+	-- holder 传 window（容器持有者），var_arg 传 gameObject
+	local model = ModelClass.New(window:GetName())
+	local controller = ControllerClass.New(model)
+	local view = ViewClass.New(window, gameObject)
+
+	window:BindMVC(view, controller, model)
 end
 
 -- =============================================================================
@@ -119,9 +122,9 @@ end
 ---通过资源加载器释放 Unity 侧的实例
 ---@param window table UIWindow 实例
 function UIWindowFactory:DestroyRuntimeObject(window)
-    if window:GetGameObject() then
-        self.resourceLoader:DestroyInstance(window:GetGameObject())
-    end
+	if window:GetGameObject() then
+		self.resourceLoader:DestroyInstance(window:GetGameObject())
+	end
 end
 
 return UIWindowFactory

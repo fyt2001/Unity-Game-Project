@@ -39,9 +39,26 @@ Unity_Dropdown         = CS.UnityEngine.UI.Dropdown
 Unity_CanvasGroup      = CS.UnityEngine.CanvasGroup
 Unity_Animator         = CS.UnityEngine.Animator
 
+-- TextMeshPro
+if CS.TMPro then
+	Unity_TMP_Text         = CS.TMPro.TMP_Text
+	Unity_TMP_InputField   = CS.TMPro.TMP_InputField
+end
+
 -- Unity 场景管理
 SceneManager           = CS.UnityEngine.SceneManagement.SceneManager
 LoadSceneMode          = CS.UnityEngine.SceneManagement.LoadSceneMode
+
+-- Game 自定义 C# 组件
+if CS.VirtualJoystick then
+	Game_VirtualJoystick       = CS.VirtualJoystick
+end
+if CS.TopDownCameraFollow then
+	Game_TopDownCameraFollow   = CS.TopDownCameraFollow
+end
+if CS.HomeSceneBootstrapper then
+	Game_HomeSceneBootstrapper = CS.HomeSceneBootstrapper
+end
 
 -- Unity 其他
 Unity_Debug            = CS.UnityEngine.Debug
