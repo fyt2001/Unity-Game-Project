@@ -1,46 +1,58 @@
 --[[
 =============================================================================
-RegisterLoginPanel.lua - 登录面板注册
+RegisterLoginPanel.lua - 登录面板注册（参考 ShaoNvClient_H02 UIWindowNames / UIConfigMap）
 =============================================================================
 Module:     Game/UI/Login/RegisterLoginPanel
-Version:    1.0.0
+Version:    2.0.0
 Description:
-    将 LoginPanel 窗口注册到 UIManager。
-    Prefab 路径: UI/Login/LoginPanel（需在 Unity Assets/Resources 下创建）
+	将 LoginPanel 窗口注册到 UIManager。
+	窗口名对齐 H02 的 UIWindowNames.UILogin = "UILogin"。
+	Prefab 路径: UI/Login/LoginPanel（位于 Assets/Game/Resources/ 下）
 
-    Prefab 结构（建议）：
-        LoginPanel (root)
-        ├── Background (Image)
-        ├── LoginForm
-        │   ├── Input_Account (InputField)
-        │   ├── Input_Password (InputField)
-        │   └── Btn_Login (Button)
-        └── Btn_Exit (Button)
+	Prefab 结构（对齐 H02 UILogin.prefab）:
+		LoginPanel (root, tag:"UI")
+		├── BgRoot
+		│   ├── BG_Image
+		│   └── Logo
+		├── ContentRoot
+		│   ├── m_LoginBtn      (Button, tag:"UIEvent")
+		│   ├── m_Loading
+		│   ├── SvrRoot
+		│   │   └── m_SvrSelectBtn -> m_SvrText
+		│   ├── m_AppVersionText
+		│   ├── m_ResVersionText
+		│   ├── m_VersionContent
+		│   ├── m_BtnTerms
+		│   └── m_BtnPrivacy
+		├── PolicyRoot
+		└── m_BtnClose
+
+	生成: Unity Editor -> Tools -> Create LoginPanel Prefab
 =============================================================================
 ]]
 
 local UIEnums = require "Framework.UI.Config.UIEnums"
 
 local function RegisterLoginPanel(uiManager)
-    assert(uiManager, "UIManager instance is required")
+	assert(uiManager, "UIManager instance is required")
 
-    uiManager:RegisterWindow("LoginPanel", {
-        -- 基础配置
-        layer = "Normal",
-        windowType = UIEnums.WindowType.Normal,
-        cachePolicy = UIEnums.CachePolicy.CacheOnClose,
-        zonePolicy = UIEnums.ZonePolicy.Default,
-        openMode = UIEnums.OpenMode.SingleTop,
-        fullscreen = false,
+	uiManager:RegisterWindow("LoginPanel", {
+		layer = "Normal",
+		windowType = UIEnums.WindowType.Normal,
+		-- 登录面板为一次性界面，关闭后必须真正销毁 GameObject（否则只缓存不隐藏，
+		-- 面板会一直挂在 UIRoot/Normal 层全屏可见，盖住 HomePanel）。
+		cachePolicy = UIEnums.CachePolicy.DestroyOnClose,
+		zonePolicy = UIEnums.ZonePolicy.Default,
+		openMode = UIEnums.OpenMode.SingleTop,
+		fullscreen = true,
 
-        -- Prefab 路径（需在 Unity Assets/Resources 下创建）
-        prefab = "UI/Login/LoginPanel",
+		prefab = "UI/Login/LoginPanel",
 
-        -- MVC 模块路径
-        model = "Game.UI.Login.LoginModel",
-        view = "Game.UI.Login.LoginView",
-        controller = "Game.UI.Login.LoginController",
-    })
+		model = "Game.UI.Login.UILoginModel",
+		view = "Game.UI.Login.UILoginView",
+		controller = "Game.UI.Login.UILoginController",
+	})
+	CS.UnityEngine.Debug.Log("[LoginPanel] RegisterLoginPanel: 窗口已注册 -> LoginPanel")
 end
 
 return RegisterLoginPanel
