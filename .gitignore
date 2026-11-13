@@ -2,7 +2,8 @@
 [Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
-[Bb]uild/
+# anchored to the project root: Assets/Game/LuaScripts/Game/Build is a real Lua module (2026-11-13)
+/[Bb]uild/
 [Bb]uilds/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
