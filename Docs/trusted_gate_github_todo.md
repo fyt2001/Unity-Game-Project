@@ -42,3 +42,8 @@
 
 ## 第 4 步（不在本轮）
 - 统计回滚，再考虑自动批准。
+
+## CI 范围（2026-11-13 补充）
+- CI 只跑 lint/静态门禁（GATE-TAMPER、luacheck、lua_layers、扫描器、能离线跑的 Lua 测试）和 EditMode。两者都**不依赖中文 SDF 字体**（`AlibabaPuHuiTiSDF.asset` 不入库，见 `Docs/字体重新生成.md`），也不依赖真实 Lua 保护密钥（仓库里只放空值）。
+- 依据：2026-11-13 在一个干净 worktree 里检出 master，里面没有 SDF 字体、密钥为空，跑 EditMode 的结果是 20 个用例，19 个通过、0 个失败、1 个跳过。跳过的是隔离名单里的 gm_s01。
+- EditMode 上 CI 需要 Unity license，目前仍在本机跑。PlayMode Harness 会渲染 UI，不在 CI 范围内。
