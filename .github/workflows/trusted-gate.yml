@@ -1,0 +1,60 @@
+# Trusted gate (poteto step 3): run the PR base's scripts against the PR head.
+# A PR cannot turn itself green by editing the gate. EditMode/PlayMode stay local
+# (Unity license); this job is GATE-TAMPER + verify.ps1 -Fast only.
+name: trusted-gate
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trusted-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  trusted-gate:
+    name: trusted-gate
+    runs-on: windows-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: MSVC dev prompt (required to build Lua on Windows)
+        uses: step-security/msvc-dev-cmd@v1
+
+      - name: Install Lua 5.5
+        uses: leafo/gh-actions-lua@v13
+        with:
+          luaVersion: "5.5"
+
+      - name: Install LuaRocks
+        uses: leafo/gh-actions-luarocks@v4
+
+      - name: Install luacheck 1.2.0
+        run: luarocks install luacheck 1.2.0
+        shell: powershell
+
+      - name: Run trusted gate from PR base
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $base = "${{ github.event.pull_request.base.sha }}"
+          $head = "${{ github.event.pull_request.head.sha }}"
+          if (-not $base -or -not $head) { throw "missing PR base/head sha" }
+          $runner = Join-Path $env:RUNNER_TEMP "verify_from_main.ps1"
+          $text = & git show ($base + ":tools/trusted/verify_from_main.ps1")
+          if ($LASTEXITCODE -ne 0) { throw "PR base has no tools/trusted/verify_from_main.ps1" }
+          [IO.File]::WriteAllText($runner, (($text -join "`r`n") + "`r`n"), (New-Object Text.ASCIIEncoding))
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner -Repo $env:GITHUB_WORKSPACE -Target $head -TrustedRef $base
+          exit $LASTEXITCODE
