@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.coplaydev.unity-mcp": {
-      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.0.0",
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#d49ae2953580f3481beb1e084a1da2682f0b5610",
       "depth": 0,
       "source": "git",
       "dependencies": {
