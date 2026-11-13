@@ -9,6 +9,8 @@ using System;
 using System.IO;
 using System.Text;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 /// <summary>
@@ -40,45 +42,42 @@ public static class BuildTools
         DoBuildTarget(BuildTarget.StandaloneWindows64, "exe");
     }
 
+    [MenuItem("Tools/Build/构建 WebGL 基础包", false, 203)]
+    public static void BuildWebGL()
+    {
+        DoBuildTarget(BuildTarget.WebGL, "");
+    }
+
     [MenuItem("Tools/Build/生成 XLua Wrap 代码", false, 220)]
     public static void GenXLuaWrap()
     {
         try
         {
             // 使用反射调用 XLua.Generator.GenAll()，避免对特定 XLua 版本的硬依赖
-            var genType = System.Type.GetType("XLua.Generator, Assembly-CSharp-Editor");
+            var genType = System.Type.GetType("CSObjectWrapEditor.Generator, Assembly-CSharp-Editor");
             if (genType != null)
             {
-                var method = genType.GetMethod("GenAll");
-                method?.Invoke(null, null);
+                var method = genType.GetMethod("GenAll", Type.EmptyTypes);
+                if (method == null) throw new BuildFailedException("XLua GenAll() was not found.");
+                method.Invoke(null, null);
                 Debug.Log("[BuildTools] XLua Wrap 代码生成完成");
             }
             else
             {
-                Debug.LogWarning("[BuildTools] XLua.Generator 类型未找到，请检查 XLua 是否正确导入");
+                throw new BuildFailedException("XLua generator was not found.");
             }
         }
         catch (Exception e)
         {
             Debug.LogError($"[BuildTools] XLua Wrap 生成失败: {e.Message}");
+            throw;
         }
     }
 
     [MenuItem("Tools/Build/复制 Lua 脚本到 Resources", false, 221)]
     public static void CopyLuaToResources()
     {
-        string sourceDir = Path.Combine(Application.dataPath, "Game", "LuaScripts");
-        string targetDir = Path.Combine(Application.dataPath, "Resources");
-
-        if (!Directory.Exists(sourceDir))
-        {
-            Debug.LogError($"[BuildTools] 源目录不存在: {sourceDir}");
-            return;
-        }
-
-        CopyDirectory(sourceDir, targetDir, ".lua");
-        AssetDatabase.Refresh();
-        Debug.Log("[BuildTools] Lua 脚本复制完成");
+        throw new BuildFailedException("Plaintext Resources export is disabled. Use the authenticated Lua AssetBundle builder.");
     }
 
     [MenuItem("Tools/Build/显示版本信息", false, 240)]
@@ -103,26 +102,75 @@ public static class BuildTools
     /// </summary>
     public static void DoBuildTarget(BuildTarget buildTarget, string extension)
     {
-        // 1. 生成 XLua Wrap
-        Debug.Log("[BuildTools] Step 1: Gen XLua Wrap...");
-        GenXLuaWrap();
+        ValidateBuildTarget(buildTarget);
+        GetBuildScenes();
+        BuildPreparedPlayer(buildTarget, GetBuildOutputPath(buildTarget, extension), BuildOptions.None);
+    }
 
-        // 2. 保存版本信息
-        Debug.Log("[BuildTools] Step 2: Save version info...");
-        SaveVersionInfo(buildTarget);
+    public static void ValidateBuildTarget(BuildTarget target)
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling
+            || EditorApplication.isUpdating)
+            throw new BuildFailedException("Stop Play Mode and wait for compilation/import before building.");
+        if (EditorUserBuildSettings.activeBuildTarget != target)
+            throw new BuildFailedException($"Switch Build Settings to {target} and wait for compilation first.");
+        if (!BuildPipeline.IsBuildTargetSupported(BuildPipeline.GetBuildTargetGroup(target), target))
+            throw new BuildFailedException($"Build support is not installed for {target}.");
+    }
 
-        // 3. 设置编译宏
-        Debug.Log("[BuildTools] Step 3: Set scripting defines...");
-        SetScriptingDefines(buildTarget);
+    public static void RequireSuccessfulResult(BuildResult result)
+    {
+        if (result != BuildResult.Succeeded)
+            throw new BuildFailedException($"Player build did not succeed: {result}");
+    }
 
-        // 4. 构建
-        Debug.Log("[BuildTools] Step 4: Build player...");
-        string outputPath = GetBuildOutputPath(buildTarget, extension);
-        string[] scenes = GetBuildScenes();
+    // Target switching and wrapper generation require a domain reload; do them before this transaction.
+    public static void BuildPreparedPlayer(BuildTarget target, string outputPath, BuildOptions options)
+    {
+        ValidateBuildTarget(target);
+        var scenes = GetBuildScenes();
+        string pending = Path.GetFullPath(Path.Combine("P0_rollback", "build_version.pending"));
+        if (File.Exists(pending))
+            throw new BuildFailedException("An earlier version transaction needs recovery: " + File.ReadAllText(pending));
+        if (target == BuildTarget.Android && EditorUserBuildSettings.buildAppBundle
+            && outputPath.EndsWith(".apk", StringComparison.OrdinalIgnoreCase))
+            throw new BuildFailedException("Android App Bundle is enabled; disable it for the APK menu.");
 
-        BuildPipeline.BuildPlayer(scenes, outputPath, buildTarget, BuildOptions.None);
-
-        Debug.Log($"[BuildTools] Build complete: {outputPath}");
+        string versionPath = Path.Combine(Application.streamingAssetsPath, VersionFileName);
+        byte[] previousVersion = File.Exists(versionPath) ? File.ReadAllBytes(versionPath) : null;
+        byte[] previousVersionMeta = File.Exists(versionPath + ".meta") ? File.ReadAllBytes(versionPath + ".meta") : null;
+        string backup = Path.GetFullPath(Path.Combine("P0_rollback", "build_version_" + Guid.NewGuid().ToString("N")));
+        Directory.CreateDirectory(backup);
+        if (previousVersion != null) File.WriteAllBytes(Path.Combine(backup, VersionFileName), previousVersion);
+        if (previousVersionMeta != null) File.WriteAllBytes(Path.Combine(backup, VersionFileName + ".meta"), previousVersionMeta);
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+        {
+            File.WriteAllText(Path.Combine(backup, "hashes.txt"),
+                "version.txt " + (previousVersion == null ? "absent" : BitConverter.ToString(sha.ComputeHash(previousVersion)))
+                + "\nversion.txt.meta " + (previousVersionMeta == null ? "absent" : BitConverter.ToString(sha.ComputeHash(previousVersionMeta))));
+        }
+        Debug.Log($"[BuildTools] Version recovery backup: {backup}");
+        var bundles = MyProject.Editor.BuildAssetBundles.BuildForTarget(target);
+        using (var staging = MyProject.Editor.BuildAssetBundles.StageForPlayer(bundles))
+        {
+            try
+            {
+                File.WriteAllText(pending, backup);
+                SaveVersionInfo(target);
+                var report = BuildPipeline.BuildPlayer(scenes, outputPath, target, options);
+                if (report == null) throw new BuildFailedException("BuildPlayer returned no report.");
+                RequireSuccessfulResult(report.summary.result);
+                Debug.Log($"[BuildTools] Build succeeded: {outputPath}; bundles: {bundles}");
+            }
+            finally
+            {
+                if (previousVersion != null) File.WriteAllBytes(versionPath, previousVersion);
+                else if (File.Exists(versionPath)) File.Delete(versionPath);
+                if (previousVersionMeta != null) File.WriteAllBytes(versionPath + ".meta", previousVersionMeta);
+                else if (File.Exists(versionPath + ".meta")) File.Delete(versionPath + ".meta");
+                File.Delete(pending);
+            }
+        }
     }
 
     /// <summary>
@@ -141,9 +189,12 @@ public static class BuildTools
 
         if (scenes.Count == 0)
         {
-            Debug.LogWarning("[BuildTools] No enabled scenes found! Using current scene.");
-            scenes.Add(UnityEngine.SceneManagement.SceneManager.GetActiveScene().path);
+            throw new BuildFailedException("No enabled scenes in Build Settings.");
         }
+
+        foreach (var scene in scenes)
+            if (string.IsNullOrEmpty(scene) || !File.Exists(scene))
+                throw new BuildFailedException($"Build scene does not exist: {scene}");
 
         return scenes.ToArray();
     }
