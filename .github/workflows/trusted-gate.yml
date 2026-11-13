@@ -42,8 +42,13 @@ jobs:
         with:
           luaVersion: "5.5.0"
 
+      # v6 defaults to LuaRocks 3.12.2, which does not support Lua 5.5.
+      # 3.13.0 is the first release that does; without it, luacheck's
+      # luafilesystem 1.9.0 fails: lua.h does not match Lua version 5.5.
       - name: Install LuaRocks
         uses: luarocks/gh-actions-luarocks@v6
+        with:
+          luaRocksVersion: "3.13.0"
 
       - name: Install luacheck 1.2.0
         run: luarocks install luacheck 1.2.0
