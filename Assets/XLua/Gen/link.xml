@@ -2,44 +2,23 @@
 
 <linker>
 
-	<assembly fullname="Assembly-CSharp">
-	    <type fullname="BattleView" preserve="all"/>
-		<type fullname="XLuaManager" preserve="all"/>
-		<type fullname="DebugLogger" preserve="all"/>
-		<type fullname="DebugBattlePanel" preserve="all"/>
-		<type fullname="UnityExtension" preserve="all"/>
-		<type fullname="LuaGameBootstrap" preserve="all"/>
-		<type fullname="LuaUpdateDriver" preserve="all"/>
-		<type fullname="TestInputSimulator" preserve="all"/>
-		<type fullname="Tutorial.BaseClass" preserve="all"/>
-		<type fullname="Tutorial.TestEnum" preserve="all"/>
-		<type fullname="Tutorial.DerivedClass" preserve="all"/>
-		<type fullname="Tutorial.ICalc" preserve="all"/>
-		<type fullname="Tutorial.DerivedClassExtensions" preserve="all"/>
-		<type fullname="XLuaTest.LuaBehaviour" preserve="all"/>
-		<type fullname="XLuaTest.Pedding" preserve="all"/>
-		<type fullname="XLuaTest.MyStruct" preserve="all"/>
-		<type fullname="XLuaTest.MyEnum" preserve="all"/>
-		<type fullname="XLuaTest.NoGc" preserve="all"/>
-		<type fullname="XLuaTest.BaseTest" preserve="all"/>
-		<type fullname="XLuaTest.Foo1Parent" preserve="all"/>
-		<type fullname="XLuaTest.Foo2Parent" preserve="all"/>
-		<type fullname="XLuaTest.Foo1Child" preserve="all"/>
-		<type fullname="XLuaTest.Foo2Child" preserve="all"/>
-		<type fullname="XLuaTest.Foo" preserve="all"/>
-		<type fullname="XLuaTest.FooExtension" preserve="all"/>
-		<type fullname="Tutorial.DerivedClass+TestEnumInner" preserve="all"/>
-		
-	</assembly>
-
-	<assembly fullname="mscorlib">
-	    <type fullname="System.Object" preserve="all"/>
-		<type fullname="System.Collections.Generic.List`1[System.Int32]" preserve="all"/>
-		
-	</assembly>
-
 	<assembly fullname="UnityEngine.CoreModule">
-	    <type fullname="UnityEngine.Object" preserve="all"/>
+	    <type fullname="UnityEngine.Application" preserve="all"/>
+		<type fullname="UnityEngine.PlayerPrefs" preserve="all"/>
+		<type fullname="UnityEngine.Screen" preserve="all"/>
+		<type fullname="UnityEngine.Camera" preserve="all"/>
+		<type fullname="UnityEngine.Rect" preserve="all"/>
+		<type fullname="UnityEngine.SceneManagement.SceneManager" preserve="all"/>
+		<type fullname="UnityEngine.AsyncOperation" preserve="all"/>
+		<type fullname="UnityEngine.SceneManagement.Scene" preserve="all"/>
+		<type fullname="UnityEngine.RectTransform" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent`1[System.Boolean]" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent`1[System.Single]" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent`1[System.Int32]" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent`1[System.String]" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent`1[UnityEngine.Vector2]" preserve="all"/>
+		<type fullname="UnityEngine.Object" preserve="all"/>
 		<type fullname="UnityEngine.Vector2" preserve="all"/>
 		<type fullname="UnityEngine.Vector3" preserve="all"/>
 		<type fullname="UnityEngine.Vector4" preserve="all"/>
@@ -67,8 +46,118 @@
 		
 	</assembly>
 
+	<assembly fullname="UnityEngine.InputLegacyModule">
+	    <type fullname="UnityEngine.Input" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.TextRenderingModule">
+	    <type fullname="UnityEngine.Font" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.IMGUIModule">
+	    <type fullname="UnityEngine.GUIUtility" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.UIModule">
+	    <type fullname="UnityEngine.RectTransformUtility" preserve="all"/>
+		<type fullname="UnityEngine.CanvasGroup" preserve="all"/>
+		<type fullname="UnityEngine.Canvas" preserve="all"/>
+		
+	</assembly>
+
 	<assembly fullname="UnityEngine.AnimationModule">
-	    <type fullname="UnityEngine.AnimationClip" preserve="all"/>
+	    <type fullname="UnityEngine.Animator" preserve="all"/>
+		<type fullname="UnityEngine.AnimationClip" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="mscorlib">
+	    <type fullname="System.IO.File" preserve="all"/>
+		<type fullname="System.IO.Path" preserve="all"/>
+		<type fullname="System.Object" preserve="all"/>
+		<type fullname="System.Collections.Generic.List`1[System.Int32]" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="Assembly-CSharp">
+	    <type fullname="ModCardDrag" preserve="all"/>
+		<type fullname="MyAssetBundles.AssetBundleManager" preserve="all"/>
+		<type fullname="Model3DCharacterView" preserve="all"/>
+		<type fullname="FileStorage" preserve="all"/>
+		<type fullname="IStorage" preserve="all"/>
+		<type fullname="Storage" preserve="all"/>
+		<type fullname="WebDownLoadManager" preserve="all"/>
+		<type fullname="XLuaManager" preserve="all"/>
+		<type fullname="DebugLogger" preserve="all"/>
+		<type fullname="UnityExtension" preserve="all"/>
+		<type fullname="HomeSceneBootstrapper" preserve="all"/>
+		<type fullname="LuaGameBootstrap" preserve="all"/>
+		<type fullname="Tutorial.BaseClass" preserve="all"/>
+		<type fullname="Tutorial.TestEnum" preserve="all"/>
+		<type fullname="Tutorial.DerivedClass" preserve="all"/>
+		<type fullname="Tutorial.ICalc" preserve="all"/>
+		<type fullname="Tutorial.DerivedClassExtensions" preserve="all"/>
+		<type fullname="XLuaTest.LuaBehaviour" preserve="all"/>
+		<type fullname="XLuaTest.Pedding" preserve="all"/>
+		<type fullname="XLuaTest.MyStruct" preserve="all"/>
+		<type fullname="XLuaTest.MyEnum" preserve="all"/>
+		<type fullname="XLuaTest.NoGc" preserve="all"/>
+		<type fullname="XLuaTest.BaseTest" preserve="all"/>
+		<type fullname="XLuaTest.Foo1Parent" preserve="all"/>
+		<type fullname="XLuaTest.Foo2Parent" preserve="all"/>
+		<type fullname="XLuaTest.Foo1Child" preserve="all"/>
+		<type fullname="XLuaTest.Foo2Child" preserve="all"/>
+		<type fullname="XLuaTest.Foo" preserve="all"/>
+		<type fullname="XLuaTest.FooExtension" preserve="all"/>
+		<type fullname="Game.View.LuaViewBehaviour" preserve="all"/>
+		<type fullname="Game.View.LuaViewFactory" preserve="all"/>
+		<type fullname="Tutorial.DerivedClass+TestEnumInner" preserve="all"/>
+		<type fullname="UIAssetBundleHelper" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.UI">
+	    <type fullname="UnityEngine.UI.CanvasScaler" preserve="all"/>
+		<type fullname="UnityEngine.UI.GraphicRaycaster" preserve="all"/>
+		<type fullname="UnityEngine.EventSystems.EventSystem" preserve="all"/>
+		<type fullname="UnityEngine.EventSystems.StandaloneInputModule" preserve="all"/>
+		<type fullname="UnityEngine.UI.Graphic" preserve="all"/>
+		<type fullname="UnityEngine.UI.Selectable" preserve="all"/>
+		<type fullname="UnityEngine.UI.Button" preserve="all"/>
+		<type fullname="UnityEngine.UI.Image" preserve="all"/>
+		<type fullname="UnityEngine.UI.RawImage" preserve="all"/>
+		<type fullname="UnityEngine.UI.Text" preserve="all"/>
+		<type fullname="UnityEngine.UI.Toggle" preserve="all"/>
+		<type fullname="UnityEngine.UI.Slider" preserve="all"/>
+		<type fullname="UnityEngine.UI.ScrollRect" preserve="all"/>
+		<type fullname="UnityEngine.UI.Scrollbar" preserve="all"/>
+		<type fullname="UnityEngine.UI.InputField" preserve="all"/>
+		<type fullname="UnityEngine.UI.LayoutRebuilder" preserve="all"/>
+		<type fullname="UnityEngine.UI.Dropdown" preserve="all"/>
+		<type fullname="UnityEngine.UI.GridLayoutGroup" preserve="all"/>
+		<type fullname="UnityEngine.UI.Shadow" preserve="all"/>
+		<type fullname="UnityEngine.UI.Button+ButtonClickedEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.Toggle+ToggleEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.Slider+SliderEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.ScrollRect+ScrollRectEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.Scrollbar+ScrollEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.Dropdown+DropdownEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.InputField+OnChangeEvent" preserve="all"/>
+		<type fullname="UnityEngine.UI.InputField+SubmitEvent" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="Unity.TextMeshPro">
+	    <type fullname="TMPro.TMP_InputField" preserve="all"/>
+		<type fullname="TMPro.TMP_Text" preserve="all"/>
+		<type fullname="TMPro.TextMeshProUGUI" preserve="all"/>
+		<type fullname="TMPro.TMP_FontAsset" preserve="all"/>
+		<type fullname="TMPro.TMP_Settings" preserve="all"/>
+		<type fullname="TMPro.TMP_InputField+OnChangeEvent" preserve="all"/>
+		<type fullname="TMPro.TMP_InputField+SubmitEvent" preserve="all"/>
 		
 	</assembly>
 

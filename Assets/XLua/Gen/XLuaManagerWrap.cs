@@ -21,10 +21,11 @@ namespace XLua.CSObjectWrap
         {
 			ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
 			System.Type type = typeof(XLuaManager);
-			Utils.BeginObjectRegister(type, L, translator, 0, 13, 3, 2);
+			Utils.BeginObjectRegister(type, L, translator, 0, 14, 3, 2);
 			
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "OnInit", _m_OnInit);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "InitLuaEnv", _m_InitLuaEnv);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "InitLuaEnvCoroutine", _m_InitLuaEnvCoroutine);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SetGameMain", _m_SetGameMain);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "StartGame", _m_StartGame);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "Dispose", _m_Dispose);
@@ -155,6 +156,49 @@ namespace XLua.CSObjectWrap
             }
             
             return LuaAPI.luaL_error(L, "invalid arguments to XLuaManager.InitLuaEnv!");
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_InitLuaEnvCoroutine(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                XLuaManager gen_to_be_invoked = (XLuaManager)translator.FastGetCSObj(L, 1);
+            
+            
+			    int gen_param_count = LuaAPI.lua_gettop(L);
+            
+                if(gen_param_count == 2&& translator.Assignable<System.Action>(L, 2)) 
+                {
+                    System.Action _onComplete = translator.GetDelegate<System.Action>(L, 2);
+                    
+                        var gen_ret = gen_to_be_invoked.InitLuaEnvCoroutine( _onComplete );
+                        translator.PushAny(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                if(gen_param_count == 1) 
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.InitLuaEnvCoroutine(  );
+                        translator.PushAny(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+            return LuaAPI.luaL_error(L, "invalid arguments to XLuaManager.InitLuaEnvCoroutine!");
             
         }
         

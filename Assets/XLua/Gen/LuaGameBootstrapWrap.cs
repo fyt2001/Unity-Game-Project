@@ -21,7 +21,7 @@ namespace XLua.CSObjectWrap
         {
 			ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
 			System.Type type = typeof(LuaGameBootstrap);
-			Utils.BeginObjectRegister(type, L, translator, 0, 5, 4, 4);
+			Utils.BeginObjectRegister(type, L, translator, 0, 5, 5, 4);
 			
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "InitializeLua", _m_InitializeLua);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "StartBattle", _m_StartBattle);
@@ -30,7 +30,8 @@ namespace XLua.CSObjectWrap
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetLuaEnv", _m_GetLuaEnv);
 			
 			
-			Utils.RegisterFunc(L, Utils.GETTER_IDX, "luaScriptPath", _g_get_luaScriptPath);
+			Utils.RegisterFunc(L, Utils.GETTER_IDX, "IsRunning", _g_get_IsRunning);
+            Utils.RegisterFunc(L, Utils.GETTER_IDX, "luaScriptPath", _g_get_luaScriptPath);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "mainEntry", _g_get_mainEntry);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "autoStart", _g_get_autoStart);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "hotReload", _g_get_hotReload);
@@ -224,6 +225,20 @@ namespace XLua.CSObjectWrap
         
         
         
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _g_get_IsRunning(RealStatePtr L)
+        {
+		    try {
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+			
+                LuaGameBootstrap gen_to_be_invoked = (LuaGameBootstrap)translator.FastGetCSObj(L, 1);
+                LuaAPI.lua_pushboolean(L, gen_to_be_invoked.IsRunning);
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            return 1;
+        }
         
         [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
         static int _g_get_luaScriptPath(RealStatePtr L)
