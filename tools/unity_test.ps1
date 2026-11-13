@@ -13,12 +13,14 @@ param(
     [ValidateSet("EditMode", "PlayMode")] [string]$Platform = "EditMode",
     [string]$Filter = "",
     [string]$LuaRoot = "",
+    # Project to test; empty = parent of tools\ (old behaviour). Used by verify.ps1 -ProjectRoot (trusted mode).
+    [string]$ProjectPath = "",
     [switch]$SelfTest
 )
 
 $ErrorActionPreference = "Stop"
 $Unity = "C:\Program Files\Unity\Hub\Editor\2021.3.9f1c1\Editor\Unity.exe"
-$Project = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+if ($ProjectPath) { $Project = (Resolve-Path -LiteralPath $ProjectPath).Path } else { $Project = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path }
 $Out = Join-Path $Project ("Logs\AgentRuns\" + (Get-Date -Format "yyyyMMdd_HHmmss") + "_unity_" + $Platform)
 
 function Test-EditorOpen([string]$ProjectPath) {

@@ -12,15 +12,21 @@
 param(
     [switch]$Fast,
     [switch]$Full,
-    [string]$Filter = ""
+    [string]$Filter = "",
+    # Trusted mode (tools\trusted\verify_from_main.ps1): run THIS copy's rules, .luacheckrc and baselines
+    # against another checkout. Empty = old behaviour (project = parent of tools\).
+    [string]$ProjectRoot = "",
+    [string]$OutDir = ""
 )
 
 $ErrorActionPreference = "Stop"
 if (-not $Fast -and -not $Full) { $Fast = $true }
-$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$ToolsRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+if ($ProjectRoot) { $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path } else { $ProjectRoot = $ToolsRoot }
+$TrustedMode = ($ProjectRoot -ne $ToolsRoot)
 Set-Location -LiteralPath $ProjectRoot
 $stamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$OutDir = Join-Path $ProjectRoot ("Logs\AgentRuns\" + $stamp + "_verify")
+if (-not $OutDir) { $OutDir = Join-Path $ProjectRoot ("Logs\AgentRuns\" + $stamp + "_verify") }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $script:failures = 0
 $script:rows = New-Object System.Collections.ArrayList
@@ -55,7 +61,10 @@ function Invoke-Tool([string]$Exe, [string[]]$ArgList, [string]$OutFile, [hashta
     return $p.ExitCode
 }
 
-function Rel([string]$Path) { return $Path.Substring($ProjectRoot.Length + 1) }
+function Rel([string]$Path) {
+    if ($Path.StartsWith($ProjectRoot + "\", [StringComparison]::OrdinalIgnoreCase)) { return $Path.Substring($ProjectRoot.Length + 1) }
+    return $Path
+}
 
 function Report([string]$Status, [string]$Check, [string]$Count, [string]$File) {
     $line = "{0} {1} {2} {3}" -f $Status, $Check, $Count, $File
@@ -86,7 +95,10 @@ $lint = Join-Path $PSScriptRoot "lint"
 $f = Join-Path $OutDir "luacheck.txt"
 if (-not $luacheck) { Report "FAIL" "L1-luacheck" "tool-missing" "-" }
 else {
-    $code = Invoke-Tool $luacheck.Source @("Assets/Game/LuaScripts", "--no-cache", "--codes", "--formatter", "plain") $f
+    $lcArgs = @("Assets/Game/LuaScripts", "--no-cache", "--codes", "--formatter", "plain")
+    # Trusted mode: the checked tree's own .luacheckrc is ignored; files[] paths resolve against the cwd (= checked tree).
+    if ($TrustedMode) { $lcArgs += @("--config", (Join-Path $ToolsRoot ".luacheckrc")) }
+    $code = Invoke-Tool $luacheck.Source $lcArgs $f
     $n = Count-Match $f '\(\w\d+\)'
     Report ($(if ($code -eq 0) { "PASS" } else { "FAIL" })) "L1-luacheck" $n (Rel $f)
 }
@@ -139,11 +151,13 @@ Write-Host ("fast stage: " + $fastMs + " ms")
 
 if ($Full) {
     $f = Join-Path $OutDir "unity_EditMode.txt"
-    $code = Invoke-Tool "powershell.exe" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "unity_test.ps1"), "-Platform", "EditMode") $f
+    $code = Invoke-Tool "powershell.exe" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "unity_test.ps1"), "-Platform", "EditMode", "-ProjectPath", $ProjectRoot) $f
     Report ($(if ($code -eq 0) { "PASS" } else { "FAIL" })) "unity:EditMode" ("exit=" + $code) (Rel $f)
     $summary = First-Match $f '^RESULT (.*)$' 1
     if ($summary -ne "?") { Write-Host ("    " + $summary) }
-    if ($code -ne 10) {
+    if ($TrustedMode) {
+        Report "SKIP" "unity:PlayMode-harness-suite" "trusted-mode" "(game.ps1 drives the open Editor of the main project only)"
+    } elseif ($code -ne 10) {
         # PlayMode stage = AgentHarness scripts in real Play mode (UTF PlayMode tests cannot see Assembly-CSharp before asmdef/S12).
         $f = Join-Path $OutDir "harness_suite.txt"
         $code = Invoke-Tool "powershell.exe" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", (Join-Path $PSScriptRoot "game.ps1"), "suite") $f

@@ -1,0 +1,16 @@
+# Protected paths for tools/trusted/verify_from_main.ps1. Always read from the TRUSTED ref, never from the target.
+# One glob per line, repo-relative, forward slashes; '**' = any depth, '*' = one path segment (case-insensitive).
+# A target that adds, changes or deletes a matching file fails GATE-TAMPER and needs human review.
+# "shrink: <glob>" = the file may only lose lines (baselines: only shrink, never grow); any added line fails.
+shrink: tools/lint/baseline.txt
+shrink: tools/lint/lua_layers.baseline.txt
+tools/**
+.luacheckrc
+AGENTS.md
+tests/**
+Assets/Editor/Tests/**
+Assets/Editor/Tests.meta
+Assets/Editor/AgentHarness/**
+Assets/Editor/AgentHarness.meta
+.codebuddy/rules/**
+.github/**
