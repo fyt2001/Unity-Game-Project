@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="unity-container">
+    <canvas id="unity-canvas" width="{{{ WIDTH }}}" height="{{{ HEIGHT }}}" tabindex="0"></canvas>
+    <div id="unity-loading-bar" role="status">
+      <span>{{{ PRODUCT_NAME }}}</span>
+      <progress id="unity-progress" max="1" value="0"></progress>
+    </div>
+    <div id="unity-warning" role="alert" hidden></div>
+    <footer><span>{{{ PRODUCT_NAME }}}</span><button id="unity-fullscreen" title="Fullscreen" aria-label="Fullscreen">&#x26F6;</button></footer>
+  </main>
+  <script>
+    const container = document.getElementById('unity-container');
+    const canvas = document.getElementById('unity-canvas');
+    const loading = document.getElementById('unity-loading-bar');
+    const progress = document.getElementById('unity-progress');
+    const warning = document.getElementById('unity-warning');
+    const fullscreen = document.getElementById('unity-fullscreen');
+    fullscreen.disabled = true;
+    function syncFullscreen() {
+      const active = document.fullscreenElement === container;
+      fullscreen.title = active ? 'Exit fullscreen' : 'Fullscreen';
+      fullscreen.setAttribute('aria-label', fullscreen.title);
+      fullscreen.setAttribute('aria-pressed', String(active));
+      fitCanvas();
+    }
+    fullscreen.onclick = async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await container.requestFullscreen();
+      } catch (error) {
+        showBanner('Fullscreen unavailable: ' + error.message, 'warning');
+      }
+    };
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && document.fullscreenElement === container)
+        document.exitFullscreen().catch(error => showBanner(error.message, 'warning'));
+    }, true);
+    function fitCanvas() {
+      const view = window.visualViewport;
+      const width = view ? view.width : window.innerWidth;
+      const height = view ? view.height : window.innerHeight;
+      const landscape = width > height && height <= 600;
+      const ratio = landscape ? 16 / 9 : {{{ WIDTH }}} / {{{ HEIGHT }}};
+      const fittedWidth = Math.min(width, Math.max(1, height - 32) * ratio);
+      const fittedHeight = fittedWidth / ratio;
+      canvas.style.width = fittedWidth + 'px';
+      canvas.style.height = fittedHeight + 'px';
+      container.style.width = document.fullscreenElement === container ? '100%' : fittedWidth + 'px';
+    }
+    window.addEventListener('resize', fitCanvas);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fitCanvas);
+    fitCanvas();
+    function showBanner(message, type) {
+      const item = document.createElement('div');
+      item.textContent = message;
+      item.className = type === 'error' ? 'error' : 'warning';
+      warning.appendChild(item);
+      warning.hidden = false;
+      if (type !== 'error') setTimeout(() => {
+        item.remove();
+        warning.hidden = warning.children.length === 0;
+      }, 5000);
+    }
+    const config = {
+      dataUrl: 'Build/{{{ DATA_FILENAME }}}',
+      frameworkUrl: 'Build/{{{ FRAMEWORK_FILENAME }}}',
+#if USE_WASM
+      codeUrl: 'Build/{{{ CODE_FILENAME }}}',
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: 'Build/{{{ MEMORY_FILENAME }}}',
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: 'Build/{{{ SYMBOLS_FILENAME }}}',
+#endif
+      streamingAssetsUrl: 'StreamingAssets',
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: showBanner
+    };
+    const script = document.createElement('script');
+    script.src = 'Build/{{{ LOADER_FILENAME }}}';
+    script.onerror = () => showBanner('Unable to load game runtime.', 'error');
+    script.onload = () => createUnityInstance(canvas, config, value => {
+      progress.value = value;
+    }).then(instance => {
+      loading.hidden = true;
+      fullscreen.disabled = !document.fullscreenEnabled || !container.requestFullscreen;
+      syncFullscreen();
+    }).catch(message => showBanner(message, 'error'));
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

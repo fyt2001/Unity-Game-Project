@@ -1,0 +1,44 @@
+FlyingSword 飞剑美术资源 —— 来源与许可台账
+============================================================
+
+【剑本体 3D 模型】
+  Pack    : KayKit - Adventurers Character Pack (1.0)
+  Author  : Kay Lousberg  ( https://www.kaylousberg.com )
+  License : CC0 1.0 Universal ( Public Domain Dedication )
+            原文见包内 LICENSE.txt：
+            "License: (Creative Commons Zero, CC0) ... This content is
+             free to use in personal, educational and commercial projects."
+            可商用、可修改、可再分发，无需署名（署名非强制）。
+  Source  : https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+  下载日期 : 2026-10-02
+  文件映射 :
+    Models/Sword_1H.fbx        <- Assets/fbx/sword_1handed.fbx
+    Models/Sword_2H.fbx        <- Assets/fbx/sword_2handed.fbx
+    Models/Sword_2H_Color.fbx  <- Assets/fbx/sword_2handed_color.fbx
+    Models/Dagger.fbx          <- Assets/fbx/dagger.fbx
+    Textures/*.png             <- Textures/{knight,mage,rogue,barbarian}_texture.png
+
+【剑光 / 拖尾贴图】
+  来源：本工程自带
+  Path : Assets/Game/Resources/VFX/CasualRPGVFX/Textures/t_trail01~07.png
+  （无需外部引入）
+
+【命中火花粒子贴图】
+  Pack    : Kenney Particle Pack (1.1)
+  Author  : Kenney Vleugels  ( https://kenney.nl )
+  License : CC0 1.0 Universal
+            原文见包内 License.txt / 本目录 Kenney_ParticlePack_License.txt：
+            "License (Creative Commons Zero, CC0) ... You may use these
+             assets in personal and commercial projects."
+            可商用、可修改、可再分发，署名非强制。
+  Source  : https://kenney.nl/assets/particle-pack
+  下载日期 : 2026-10-02
+  文件映射 :
+    Textures/Hit_Flash.png <- PNG (Transparent)/star_05.png  (命中中心闪光)
+    Textures/Hit_Spark.png <- PNG (Transparent)/spark_04.png (电弧四散)
+    Textures/Hit_Slash.png <- PNG (Transparent)/slash_01.png (月牙斩弧)
+  组装物 : SwordHitVFX.prefab（三套 ParticleSystem，染青色，Additive）
+
+============================================================
+说明：以上外部资源均为 CC0，进入本工程后可自由商用；本文件保留
+来源信息仅为合规审计与日后版本核对之用。
