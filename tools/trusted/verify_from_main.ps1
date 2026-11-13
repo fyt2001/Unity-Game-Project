@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 # UTF-8 with BOM, ASCII only. Windows PowerShell 5.1 (powershell.exe; pwsh is not installed).
 #   powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\trusted\verify_from_main.ps1 -Target <branch|commit|worktree dir> [-TrustedRef master] [-Unity]
 #
@@ -12,8 +12,7 @@
 #               scan_patterns rules/allowlist/baselines, runtime_no_editor and lua_tests.json, applied to target sources.
 #   UNITY       only with -Unity: <trusted>\tools\unity_test.ps1 -Platform EditMode -ProjectPath <target>. Slow: a fresh
 #               worktree has no Library folder, so Unity imports the whole project first.
-# A branch/commit target is checked out with "git worktree add --detach" next to the repo (lua_tests.json has
-# "../tests/..." entries relative to the project root); the trusted ref goes to %TEMP%\gate_main_<ts>.
+# A branch/commit target is checked out with "git worktree add --detach" next to the repo (lua_tests.json paths are relative to the project root). The trusted ref goes to %TEMP%\gate_main_<ts>.
 # Both temporary worktrees are removed at the end (git worktree remove --force + prune) unless -KeepTemp.
 # A directory target must be a worktree of this repo; its uncommitted and untracked files count as changes.
 # Exit: 0 = PASS (all stages), 1 = FAIL, 2 = setup/usage error.

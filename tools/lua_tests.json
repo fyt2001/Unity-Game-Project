@@ -5,16 +5,16 @@
     { "path": "tests/online_session.lua", "mode": "fast", "reason": "" },
     { "path": "tests/release_safety.lua", "mode": "fast", "reason": "" },
     { "path": "tests/ui_shutdown.lua", "mode": "xlua", "reason": "requires CS at load (Framework/UI/Utils/UIUtil.lua:7)" },
-    { "path": "../tests/gm_ui_view.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/home_gm_currency.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/home_ui_view.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/online_gameplay_guards.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/ui_loading_cancel.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/upgrade_pause.lua", "mode": "fast", "reason": "" },
-    { "path": "../tests/gm_s01.lua", "mode": "quarantine", "reason": "stale CS mock: GMUI.lua:30-32 now reads CS.UnityEngine.KeyCode enums; 21 pass / 9 fail on 2026-11-12. Fix the mock, then set mode=fast." },
-    { "path": "../tools/battle_feedback_regression.lua", "mode": "xlua", "reason": "requires CS at load (Game/Battle/VFXManager.lua:22)" },
-    { "path": "../tools/mod_loadout_regression.lua", "mode": "xlua", "reason": "requires CS at load (Game/Battle/VFXManager.lua:22)" },
-    { "path": "../tests/gm_ui_play.lua", "mode": "runtime", "reason": "runs only inside a live Editor Play session with the GM window open" },
-    { "path": "../tests/remaining_ui_runtime.lua", "mode": "runtime", "reason": "runs only inside an initialized game Lua environment" }
+    { "path": "tests/gm_ui_view.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/home_gm_currency.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/home_ui_view.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/online_gameplay_guards.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/ui_loading_cancel.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/upgrade_pause.lua", "mode": "fast", "reason": "" },
+    { "path": "tests/gm_s01.lua", "mode": "quarantine", "reason": "stale CS mock: GMUI.lua:30-32 now reads CS.UnityEngine.KeyCode enums; 21 pass / 9 fail on 2026-11-12. Fix the mock, then set mode=fast." },
+    { "path": "tests/battle_feedback_regression.lua", "mode": "xlua", "reason": "requires CS at load (Game/Battle/VFXManager.lua:22)" },
+    { "path": "tests/mod_loadout_regression.lua", "mode": "xlua", "reason": "requires CS at load (Game/Battle/VFXManager.lua:22)" },
+    { "path": "tests/gm_ui_play.lua", "mode": "runtime", "reason": "runs only inside a live Editor Play session with the GM window open" },
+    { "path": "tests/remaining_ui_runtime.lua", "mode": "runtime", "reason": "runs only inside an initialized game Lua environment" }
   ]
 }
