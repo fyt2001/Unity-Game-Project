@@ -37,14 +37,16 @@ jobs:
 
       # leafo/gh-actions-luarocks@v4 runs Unix ./configure on Windows and fails.
       # luarocks/gh-actions-* @v11/@v6 are the maintained fork with Windows support.
-      - name: Install Lua 5.5.0
+      # luacheck 1.2.0 crashes when it itself runs on Lua 5.5
+      # (standards.lua:134 "attempt to assign to const variable 'field_name'").
+      # 5.4.8 matches this machine's scoop luacheck (Lua 5.4). std in
+      # .luacheckrc stays lua53 (XLua). Game Lua 5.5 is unchanged.
+      - name: Install Lua 5.4.8
         uses: luarocks/gh-actions-lua@v11
         with:
-          luaVersion: "5.5.0"
+          luaVersion: "5.4.8"
 
-      # v6 defaults to LuaRocks 3.12.2, which does not support Lua 5.5.
-      # 3.13.0 is the first release that does; without it, luacheck's
-      # luafilesystem 1.9.0 fails: lua.h does not match Lua version 5.5.
+      # v6 defaults to LuaRocks 3.12.2; pin 3.13.0 explicitly.
       - name: Install LuaRocks
         uses: luarocks/gh-actions-luarocks@v6
         with:
