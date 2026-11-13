@@ -1,0 +1,15 @@
+# LUA-LAYER baseline: existing violations. Only delete lines, never add by hand.
+# Format: RULE|file|module-or-pattern (no line numbers, so edits elsewhere do not churn).
+CYCLE|Assets/Game/LuaScripts/Game/Battle/BattleManager.lua|Game.Dungeon.SpawnDirector
+CYCLE|Assets/Game/LuaScripts/Game/Battle/DropSystem.lua|Game.Build.BuildConfig
+CYCLE|Assets/Game/LuaScripts/Game/Battle/EnemyManager.lua|Game.Build.BuildConfig
+CYCLE|Assets/Game/LuaScripts/Game/Build/BuildConfig.lua|Game.Battle.WeaponSystem
+CYCLE|Assets/Game/LuaScripts/Game/Build/BuildSystem.lua|Game.Battle.BattleLayers
+CYCLE|Assets/Game/LuaScripts/Game/Build/BuildSystem.lua|Game.Battle.VFXConfig
+CYCLE|Assets/Game/LuaScripts/Game/Build/BuildSystem.lua|Game.Battle.VFXManager
+CYCLE|Assets/Game/LuaScripts/Game/Dungeon/DungeonManager.lua|Game.Battle.BattleManager
+CYCLE|Assets/Game/LuaScripts/Game/Dungeon/DungeonManager.lua|Game.Build.BuildSystem
+CYCLE|Assets/Game/LuaScripts/Game/Dungeon/SpawnDirector.lua|Game.Battle.EnemyConfig
+UI-BATTLEMGR|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudController.lua|GetBattleManager\s*\(
+UI-GM|Assets/Game/LuaScripts/Game/UI/Login/UILoginView.lua|Game.GM.GMConfig
+UI-GM|Assets/Game/LuaScripts/Game/UI/Login/UILoginView.lua|Game.GM.GMUnlock

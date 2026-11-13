@@ -1,0 +1,25 @@
+{
+  "_comment": "verify.ps1 -Full PlayMode stage runs these via tools/game.ps1 (Editor must be closed). mode: stable = blocking; quarantine = reported, non-blocking.",
+  "scripts": [
+    {
+      "path": "smoke_login_home.json",
+      "mode": "stable",
+      "reason": ""
+    },
+    {
+      "path": "f6_dungeon_enter.json",
+      "mode": "stable",
+      "reason": ""
+    },
+    {
+      "path": "f7_level_up.json",
+      "mode": "stable",
+      "reason": ""
+    },
+    {
+      "path": "f8_pause_extract.json",
+      "mode": "stable",
+      "reason": ""
+    }
+  ]
+}

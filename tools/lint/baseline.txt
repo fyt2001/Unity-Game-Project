@@ -1,0 +1,64 @@
+# scan_patterns baseline: existing debt. Only delete lines, never add by hand.
+# Format: RULE|file|normalized source line (no line numbers).
+NO-FIND|Assets/Game/LuaScripts/Game/GM/GMUI.lua|if Object.FindObjectOfType(typeof(ES.EventSystem)) then return end
+NO-FIND|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|bootstrapper = Object.FindObjectOfType(typeof(Game_HomeSceneBootstrapper))
+NO-FIND|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|bootstrapper = Object.FindObjectOfType(typeof(Game_HomeSceneBootstrapper))
+NO-FIND|Assets/Game/Scripts/Core/AssetBundleManager.cs|var abm = FindObjectOfType<AssetBundleManager>();
+NO-FIND|Assets/Game/Scripts/Core/GameLaunch.cs|var listeners = FindObjectsOfType<AudioListener>();
+NO-FIND|Assets/Game/Scripts/Core/MonoSingleton.cs|GameObject parent = GameObject.Find("Boot");
+NO-FIND|Assets/Game/Scripts/Environment/HomeDesertAtmosphere.cs|foreach(var light in UnityEngine.Object.FindObjectsOfType<Light>())if(light.type==LightType.Directional && light.gameObject.scene==gameObject.scene){originalLights.Add(new LightState{light=light,color=light.color,intensity=light.intensity,shadows=light.shadows,strength=light.shadowStrength});light.color=new Color(1,.96f,.88f);light.intensity=.95f;light.shadows=LightShadows.Soft;light.shadowStrength=.32f;}
+NO-FIND|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|Canvas canvas = FindObjectOfType<Canvas>();
+NO-FIND|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|_luaEnv = FindObjectOfType<LuaGameBootstrap>()?.GetLuaEnv();
+NO-FIND|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|if (FindObjectOfType<EventSystem>() == null)
+NO-FIND|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|var joystick = FindObjectOfType<VirtualJoystick>();
+NO-FIND|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|var legacy = FindObjectOfType<LuaGameBootstrap>();
+NO-FIND|Assets/Game/Scripts/GameLaunch/LuaGameBootstrap.cs|var all = FindObjectsOfType<LuaGameBootstrap>();
+NO-FIND|Assets/Game/Scripts/UI/Login/LoginCharClicker.cs|var go = GameObject.Find("LoginChar_Spike");
+NO-PRINT|Assets/Game/LuaScripts/Framework/UI/Utils/CJKFont.lua|print("[CJKFont] 加载 " .. FONT_PATH .. " 失败，沿用 prefab 预置字体")
+NO-PRINT|Assets/Game/LuaScripts/Framework/UI/Utils/CJKFont.lua|print("[CJKFont] 注册全局 fallback 失败：" .. tostring(err))
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudController.lua|print("[UIBattleHudController] m_PauseBtn not found, pause entry unavailable")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudController.lua|print("[UIBattleHudController] m_ReturnScrollBtn not found, skip")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] BindJoystick failed: " .. tostring(err) .. " (C# EnsureJoystick will recover)")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] HomeSceneBootstrapper not found, joystick input will not reach PlayerController")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] Joystick handed to Bootstrapper (C# polling mode)")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] Joystick not found in prefab, skip binding")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] VirtualJoystick component not found, skip binding")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] m_ExpBar not found in prefab, exp bar unavailable")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] m_PauseBtn not found in prefab, pause entry unavailable")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIBattleHudView.lua|print("[UIBattleHudView] m_ReturnScrollBtn not found in prefab, skip binding")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIExtractConfirmController.lua|print("[UIExtractConfirmController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Battle/UIPauseController.lua|print("[UIPauseController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Dungeon/UIFloorEventController.lua|print("[UIFloorEventController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Dungeon/UILevelUpController.lua|print("[UILevelUpController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Dungeon/UIRunResultController.lua|print("[UIRunResultController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeController.lua|print(string.format("[UIHomeController] %s clicked", name))
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeController.lua|print(string.format("[UIHomeController] Button '%s' not found, skip", name))
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|print("[UIHomeView] BindJoystick failed: " .. tostring(err) .. " (C# EnsureJoystick will recover)")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|print("[UIHomeView] HomeSceneBootstrapper not found, joystick input will not reach PlayerController")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|print("[UIHomeView] Joystick handed to Bootstrapper (C# polling mode)")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|print("[UIHomeView] Joystick not found in prefab, skip binding")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Home/UIHomeView.lua|print("[UIHomeView] VirtualJoystick component not found, skip binding")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] Close clicked")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] Login request ignored: cooldown active")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] No server selected, opening server list...")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] Privacy Policy clicked")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] Server select clicked")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print("[LoginPanel] Terms of Service clicked")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Login/UILoginController.lua|print(string.format(
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Mod/UIModStationController.lua|print("[UIModStationController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Mod/UIModStationController.lua|print("[UIModStationController] UIManager not available, cannot close ModStationPanel")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Shop/UIShopController.lua|print("[UIShopController] OnOpen: view/model not bound")
+NO-PRINT|Assets/Game/LuaScripts/Game/UI/Shop/UIShopController.lua|print("[UIShopController] UIManager not available, cannot close ShopPanel")
+NO-SWALLOW|Assets/Game/Scripts/Core/XLuaManager.cs|catch { }
+NO-SWALLOW|Assets/Game/Scripts/Debug/DebugLogger.cs|catch (IOException)
+NO-SWALLOW|Assets/Game/Scripts/LocalBackend/LocalBackendClient.cs|catch (ArgumentException) { }
+RES-MIX|Assets/Game/LuaScripts/Framework/UI/Utils/CJKFont.lua|return CS.UnityEngine.Resources.Load(FONT_PATH, typeof(CS.TMPro.TMP_FontAsset))
+RES-MIX|Assets/Game/LuaScripts/Game/Battle/View/BulletView.lua|prefab = UnityEngine.Resources.Load(vfxPath)
+RES-MIX|Assets/Game/LuaScripts/Game/Battle/View/ChainLightningView.lua|lineMaterial = UnityEngine.Resources.Load("VFX/Combat/BeamLine", typeof(UnityEngine.Material))
+RES-MIX|Assets/Game/LuaScripts/Game/Battle/View/FlyingSwordView.lua|return UnityEngine.Resources.Load(PREFAB_PATH)
+RES-MIX|Assets/Game/LuaScripts/Game/UI/Login/UILoginView.lua|local legalFont = CS.UnityEngine.Resources.Load("Fonts/EntryLegalSDF", typeof(CS.TMPro.TMP_FontAsset))
+RES-MIX|Assets/Game/Scripts/Environment/HomeDesertAtmosphere.cs|var bones=Resources.Load<GameObject>("DesertOasis/AncientRibcage");
+RES-MIX|Assets/Game/Scripts/Environment/HomeDesertAtmosphere.cs|var texture=Resources.Load<Texture2D>("DesertOasis/PaintedSand");
+RES-MIX|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|if (enemyModel == null) enemyModel = Resources.Load<GameObject>("Characters/QuaterniusHero");
+RES-MIX|Assets/Game/Scripts/GameLaunch/HomeSceneBootstrapper.cs|var enemyModel = Resources.Load<GameObject>("Characters/EnemyModel");
+RES-MIX|Assets/Game/Scripts/Utils/JsonUtils.cs|TextAsset textAsset = Resources.Load<TextAsset>(resourcePath);

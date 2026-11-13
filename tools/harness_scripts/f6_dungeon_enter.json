@@ -1,0 +1,43 @@
+{
+  "name": "f6_dungeon_enter",
+  "description": "F6 enter a dungeon run from Home and see the battle HUD; GM clears enemies.",
+  "include": "smoke_login_home.json",
+  "timeoutSec": 360,
+  "steps": [
+    {
+      "op": "assertLua",
+      "label": "F6 StartDungeonRun accepted (same call the cave gate makes; walking to the gate is not simulated)",
+      "expr": "require('Game.GameMain').StartDungeonRun() == true"
+    },
+    {
+      "op": "waitLua",
+      "label": "F6 battle running (phase 3)",
+      "expr": "(function() local d = require('Game.GameMain').GetDungeonManager(); return d ~= nil and d.battleManager ~= nil and d.battleManager.phase == 3 end)()",
+      "timeoutSec": 90
+    },
+    {
+      "op": "waitLua",
+      "label": "F6 BattleHudPanel open",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('BattleHudPanel')",
+      "timeoutSec": 20
+    },
+    {
+      "op": "gm",
+      "label": "F6 GM role.invincible (keeps the run alive)",
+      "gm": "role.invincible"
+    },
+    {
+      "op": "wait",
+      "seconds": 2
+    },
+    {
+      "op": "gm",
+      "label": "F6 GM enemy.kill_all",
+      "gm": "enemy.kill_all"
+    },
+    {
+      "op": "screenshot",
+      "name": "f6_battle"
+    }
+  ]
+}

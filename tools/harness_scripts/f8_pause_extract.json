@@ -1,0 +1,64 @@
+{
+  "name": "f8_pause_extract",
+  "description": "F8 pause -> extract -> confirm -> run result -> back Home.",
+  "include": "f6_dungeon_enter.json",
+  "timeoutSec": 480,
+  "steps": [
+    {
+      "op": "click",
+      "label": "F8 click BattleHudPanel/m_PauseBtn",
+      "window": "BattleHudPanel",
+      "node": "m_PauseBtn"
+    },
+    {
+      "op": "waitLua",
+      "label": "F8 PausePanel open and battle paused (phase 4)",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('PausePanel') and require('Game.GameMain').GetDungeonManager().battleManager.phase == 4",
+      "timeoutSec": 15
+    },
+    {
+      "op": "screenshot",
+      "name": "f8_pause"
+    },
+    {
+      "op": "click",
+      "label": "F8 click PausePanel/m_ExtractBtn",
+      "window": "PausePanel",
+      "node": "m_ExtractBtn"
+    },
+    {
+      "op": "waitLua",
+      "label": "F8 ExtractConfirmPopup open",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('ExtractConfirmPopup')",
+      "timeoutSec": 15
+    },
+    {
+      "op": "click",
+      "label": "F8 confirm extract",
+      "window": "ExtractConfirmPopup",
+      "node": "m_ConfirmBtn"
+    },
+    {
+      "op": "waitLua",
+      "label": "F8 RunResultPanel open",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('RunResultPanel')",
+      "timeoutSec": 45
+    },
+    {
+      "op": "screenshot",
+      "name": "f8_result"
+    },
+    {
+      "op": "click",
+      "label": "F8 confirm result",
+      "window": "RunResultPanel",
+      "node": "m_ConfirmBtn"
+    },
+    {
+      "op": "waitLua",
+      "label": "F8 back in Home",
+      "expr": "require('Game.GameMain').GetCurrentScene()=='Home' and require('Game.GameMain').GetUIManager():IsOpen('HomePanel')",
+      "timeoutSec": 90
+    }
+  ]
+}

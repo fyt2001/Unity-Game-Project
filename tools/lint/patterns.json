@@ -1,0 +1,38 @@
+{
+  "_comment": "scan_patterns rules. 'mask': comments are always blanked; strings=true also blanks string contents. 'multiline': regex runs over the whole masked file. Paths are project-relative globs (fnmatch, '**' allowed). allowlist.txt = accepted by design; baseline.txt = existing debt (only shrink).",
+  "rules": [
+    {
+      "id": "NO-FIND",
+      "langs": ["cs", "lua"],
+      "include": ["Assets/Game/Scripts/**/*.cs", "Assets/Game/LuaScripts/**/*.lua"],
+      "pattern": "\\bGameObject\\s*\\.\\s*Find\\s*\\(|\\b(?:FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag|SendMessage|SendMessageUpwards|BroadcastMessage)\\b",
+      "strings": true,
+      "message": "业务代码里做全局场景查找/反射消息（Find / FindObjectOfType / SendMessage）。规则（ui-framework-conventions 0/6）要求零 Find：请在初始化时由 C# 引导器或 GameMain / SceneLoader 上下文把依赖注入进来，UI 节点用 UIComponentBinder / AutoBind 绑定。"
+    },
+    {
+      "id": "NO-SWALLOW",
+      "langs": ["cs"],
+      "include": ["Assets/Game/Scripts/**/*.cs"],
+      "pattern": "catch\\s*(?:\\([^)]*\\))?\\s*\\{\\s*\\}",
+      "multiline": true,
+      "strings": true,
+      "message": "空 catch 静默吞掉异常（注释不算处理）。读 Lua 字段请改用 LuaFieldReader.TryGet / GetOr（首次失败输出一次带 key 的警告）；其它情况至少 Debug.LogWarning 并去重，或者让异常继续抛出。"
+    },
+    {
+      "id": "NO-PRINT",
+      "langs": ["lua"],
+      "include": ["Assets/Game/LuaScripts/**/*.lua"],
+      "pattern": "(?<![\\w.:])print\\s*\\(",
+      "strings": true,
+      "message": "Lua 业务代码直接 print。请改用 Logger.Info/Warn/Error(tag, fmt, ...)，这样日志有分级、tag，并能被 GM 日志和 harness 收集。"
+    },
+    {
+      "id": "RES-MIX",
+      "langs": ["cs", "lua"],
+      "include": ["Assets/Game/Scripts/**/*.cs", "Assets/Game/LuaScripts/**/*.lua"],
+      "pattern": "\\bResources\\s*\\.\\s*Load(?:Async|All)?\\b",
+      "strings": true,
+      "message": "直接 Resources.Load，绕过了 UI 的 AssetBundleProvider / AsyncResourceProvider，Resources 和 AB 混用。请走资源提供者；确属有意（字体、启动兜底）时在 allowlist.txt 写明原因。"
+    }
+  ]
+}

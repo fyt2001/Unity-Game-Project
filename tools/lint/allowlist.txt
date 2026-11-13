@@ -1,0 +1,24 @@
+# scan_patterns allowlist: accepted by design (not debt). Format:
+#   RULE | path glob (project-relative) | optional substring that must appear on the hit line
+# Keep each entry narrow and say why in a comment line above it.
+
+# Framework UI root bootstrap: the UI layer owns scene-level lookups of its own roots.
+NO-FIND | Assets/Game/LuaScripts/Framework/UI/Layer/UILayerManager.lua
+# Async cache root lookup is framework infrastructure.
+NO-FIND | Assets/Game/LuaScripts/Framework/Resource/AsyncResourceProvider.lua
+# Singleton fallback lookup (MonoSingleton.cs:31).
+NO-FIND | Assets/Game/Scripts/Core/MonoSingleton.cs | _instance = FindObjectOfType<T>()
+# Security probes are diagnostics, not gameplay.
+NO-FIND | Assets/Game/Scripts/Security/*Probe.cs
+# XLuaManager.Dispose sweeps every Lua-bound component before closing LuaEnv.
+NO-FIND | Assets/Game/Scripts/Core/XLuaManager.cs | .ReleaseLuaBindings();
+NO-FIND | Assets/Game/Scripts/Core/XLuaManager.cs | ?.ReleaseLuaCallbacks();
+
+# Best-effort dispose of a UnityWebRequest during abort/retry/fail cleanup.
+NO-SWALLOW | Assets/Game/Scripts/Core/WebDownLoadManager.cs | try { d.www?.Dispose(); } catch { }
+
+# Logger is the sanctioned sink: xLua routes print to the Unity Console.
+NO-PRINT | Assets/Game/LuaScripts/Framework/UI/Utils/Logger.lua
+
+# The Resources provider itself.
+RES-MIX | Assets/Game/LuaScripts/Framework/Resource/AsyncResourceProvider.lua

@@ -1,0 +1,68 @@
+{
+  "name": "smoke_login_home",
+  "description": "F1 launch -> F2 offline login -> F3 Home move. Fresh sandbox save, offline practice server, no backend.",
+  "scene": "Assets/Scenes/LaunchScene.unity",
+  "timeoutSec": 240,
+  "failOnWarnings": false,
+  "failOnWarningContains": [
+    "[LuaFieldReader]"
+  ],
+  "steps": [
+    {
+      "op": "waitLaunch",
+      "label": "F1 GameLaunch reaches Complete",
+      "timeoutSec": 120
+    },
+    {
+      "op": "waitLua",
+      "label": "F1 Loading finished and LoginPanel open",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('LoginPanel') and not require('Game.GameMain').GetUIManager():IsOpen('Loading')",
+      "timeoutSec": 60
+    },
+    {
+      "op": "assertLua",
+      "label": "F2 offline practice selected (sandbox save, no backend)",
+      "expr": "not require('Game.Online.OnlineSession').IsSelected()"
+    },
+    {
+      "op": "screenshot",
+      "name": "f2_login"
+    },
+    {
+      "op": "click",
+      "label": "F2 click LoginPanel/m_LoginBtn",
+      "window": "LoginPanel",
+      "node": "m_LoginBtn"
+    },
+    {
+      "op": "waitLua",
+      "label": "F2 offline login enters Home with HomePanel",
+      "expr": "require('Game.GameMain').GetCurrentScene()=='Home' and require('Game.GameMain').GetUIManager():IsOpen('HomePanel')",
+      "timeoutSec": 90
+    },
+    {
+      "op": "wait",
+      "seconds": 1.5
+    },
+    {
+      "op": "screenshot",
+      "name": "f3_home"
+    },
+    {
+      "op": "joystick",
+      "label": "F3 joystick right 1.5s moves the player",
+      "x": 1,
+      "y": 0,
+      "seconds": 1.5,
+      "minDistance": 0.5,
+      "timeoutSec": 15
+    },
+    {
+      "op": "screenshot",
+      "name": "f3_home_moved"
+    },
+    {
+      "op": "dumpLog"
+    }
+  ]
+}

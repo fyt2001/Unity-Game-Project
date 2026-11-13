@@ -1,0 +1,36 @@
+{
+  "name": "f7_level_up",
+  "description": "F7 GM level-up opens the 3-choice popup; picking option 0 closes it.",
+  "include": "f6_dungeon_enter.json",
+  "timeoutSec": 420,
+  "steps": [
+    {
+      "op": "gm",
+      "label": "F7 GM role.level_up n=1",
+      "gm": "role.level_up",
+      "arg": "1"
+    },
+    {
+      "op": "waitLua",
+      "label": "F7 LevelUpPopup open",
+      "expr": "require('Game.GameMain').GetUIManager():IsOpen('LevelUpPopup')",
+      "timeoutSec": 15
+    },
+    {
+      "op": "screenshot",
+      "name": "f7_level_up"
+    },
+    {
+      "op": "click",
+      "label": "F7 pick LevelUpPopup/m_OptionBtn0",
+      "window": "LevelUpPopup",
+      "node": "m_OptionBtn0"
+    },
+    {
+      "op": "waitLua",
+      "label": "F7 LevelUpPopup closed after choice",
+      "expr": "not require('Game.GameMain').GetUIManager():IsOpen('LevelUpPopup')",
+      "timeoutSec": 15
+    }
+  ]
+}

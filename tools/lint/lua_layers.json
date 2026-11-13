@@ -1,0 +1,39 @@
+{
+  "_comment": "LUA-LAYER config. Packages: 'Framework', 'Common', 'Game.<Sub>' (Game.GameMain counts as its own package). Paths are relative to the Unity project root. Rules marked baseline=false are hard zero-locks and never read the baseline file.",
+  "lua_root": "Assets/Game/LuaScripts",
+  "rules": [
+    {
+      "id": "FW-GAME",
+      "baseline": false,
+      "from": ["Framework"],
+      "to_prefix": ["Game"],
+      "message": "Framework 不得 require Game 层（{module}）。请把共享能力下沉到 Framework，或让 Game 通过回调/注入把依赖传进来，不要在 Framework 里反向引用业务。"
+    },
+    {
+      "id": "DATA-UP",
+      "baseline": true,
+      "from": ["Game.Save", "Game.Online", "Game.Mod"],
+      "to_prefix": ["Game.UI", "Game.Scene", "Game.Battle", "Game.Dungeon"],
+      "message": "数据/服务层 {src_pkg} 不得 require 表现或玩法层（{module}）。请反转依赖：由上层（GameMain / Dungeon / UI）订阅事件或把需要的数据作为参数传进来。"
+    },
+    {
+      "id": "UI-GM",
+      "baseline": true,
+      "from": ["Game.UI"],
+      "except_from_prefix": ["Game.UI.GM"],
+      "to_prefix": ["Game.GM"],
+      "message": "UI 只有 Game.UI.GM 可以依赖 GM 调试模块；这里 require \"{module}\"，release 包也会带上 GM。请让 GM 侧在 GameMain 里注册钩子，或通过 EventManager 事件注入。"
+    }
+  ],
+  "cycle_packages": ["Game.Battle", "Game.Build", "Game.Dungeon"],
+  "cycle_message": "循环依赖 {src_pkg} → {dst_pkg}（{dst_pkg} 已经依赖 {src_pkg}）：require \"{module}\"。请把共用配置下沉到这几个包之外的数据层（例如 Game.Config），或改成由 DungeonManager 注入，不要再新增循环边。",
+  "call_rules": [
+    {
+      "id": "UI-BATTLEMGR",
+      "baseline": true,
+      "paths_prefix": ["Assets/Game/LuaScripts/Game/UI/"],
+      "pattern": "GetBattleManager\\s*\\(",
+      "message": "UI 直接调用 GetBattleManager() 绕过了依赖方向（service locator 直连战斗）。请让战斗侧通过事件/只读快照把 HUD 需要的数据推给 UI。"
+    }
+  ]
+}
