@@ -1,153 +1,235 @@
 --[[
 =============================================================================
-LoginScene.lua - 登录场景脚本（参考 ShaoNvClient_H02 精华）
+LoginScene.lua - 登录场景脚本（参考 ShaoNvClient_H02 LoginScene）
 =============================================================================
 Module:     Game/Scene/LoginScene
-Version:    1.0.0
+Version:    3.0.0
 Description:
-    登录场景的 Lua 脚本。由 SceneLoader 在场景加载完成后调用 OnSceneEnter。
-    负责：初始化登录 UI、处理登录逻辑、登录成功后切换到主城场景。
+	对齐 ShaoNvClient_H02 的登录场景设计。
 
-    核心设计：
-        - 场景入口与出口分离：OnSceneEnter / OnSceneLeave
-        - 登录状态机：Connect → Auth → SelectServer → EnterGame
-        - 异步安全：登录过程中防止重复操作
-        - UI 生命周期：场景退出时自动清理登录相关 UI
+	生命周期（对齐 H02）:
+		OnCreate  -> 预加载 LoginPanel Prefab 及相关资源
+		OnComplete -> 打开 LoginPanel + 注册事件监听
+		OnLeave   -> 清理资源 + 注销事件 + 关闭窗口
 
-    用法：
-        由 SceneLoader 自动调用，无需手动调用。
+	登录流程（事件驱动，对齐 H02 UILoginCtrl -> HallConnector 模式）:
+		- LoginPanel_OnLogin        -> 模拟登录流程
+		- LoginPanel_OnServerSelect -> 打开服务器选择界面
+		- LoginPanel_OnShowTerms    -> 打开服务条款
+		- LoginPanel_OnShowPrivacy  -> 打开隐私政策
+
+	核心设计（对齐 H02）:
+		- Scene 不直接持有 Controller 引用，通过 EventManager 解耦
+		- Login 按钮含防连点冷却（Controller 层实现）
+		- 服务器未选时点击登录 -> 自动弹出服务器选择
+		- 登录成功后切换 Home 场景
 =============================================================================
 ]]
 
-local LoginScene = {}
-LoginScene.__index = LoginScene
+local Logger = require "Framework.UI.Utils.Logger"
+local BaseScene = require "Game.Scene.BaseScene"
 
--- 登录状态
+local LoginScene = {}
+setmetatable(LoginScene, { __index = BaseScene })
+
 local LoginState = {
-    Idle = 0,
-    Connecting = 1,
-    Authenticating = 2,
-    SelectingServer = 3,
-    Entering = 4,
-    Done = 5,
+	Idle = 0,
+	Connecting = 1,
+	Authenticating = 2,
+	SelectingServer = 3,
+	Entering = 4,
+	Done = 5,
 }
 
--- =============================================================================
--- 场景生命周期
--- =============================================================================
+function LoginScene:OnCreate(sceneName, config)
+	Logger.Info("LoginScene", "OnCreate: %s", sceneName)
 
-function LoginScene:OnSceneEnter(sceneName, config)
-    print(string.format("[LoginScene] Entering scene: %s", sceneName))
+	self._sceneName = sceneName
+	self._config = config
+	self._state = LoginState.Idle
+	self._generation = (self._generation or 0) + 1
+	self._active = true
 
-    self._sceneName = sceneName
-    self._config = config
-    self._state = LoginState.Idle
-    self._uiManager = nil
+	local preloadList = {
+		"UI/Login/LoginPanel",
+		"UI/Loading/LoadingPanel",
+	}
+	self._preloadResources = {}
+	for _, path in ipairs(preloadList) do
+		self._preloadResources[path] = true
+	end
 
-    -- 获取 UIManager 引用
-    local GameMain = require "Game.GameMain"
-    self._uiManager = GameMain.GetUIManager()
-
-    -- 初始化登录 UI
-    self:_initLoginUI()
-
-    -- 开始登录流程
-    self:_startLoginFlow()
+	Logger.Debug("LoginScene", "Registered %d preload resources", #preloadList)
 end
 
-function LoginScene:OnSceneLeave()
-    print("[LoginScene] Leaving scene, cleaning up...")
+function LoginScene:OnComplete(sceneName, config)
+	Logger.Info("LoginScene", "OnComplete: %s", sceneName)
 
-    -- 关闭登录相关 UI
-    if self._uiManager then
-        self._uiManager:Close("LoginPanel", "SceneLeave")
-    end
+	self._state = LoginState.Idle
 
-    self._state = LoginState.Idle
-    self._uiManager = nil
+	self:_registerEvents()
+
+	local GameMain = require "Game.GameMain"
+	self._uiManager = GameMain.GetUIManager()
+
+	Logger.Debug("LoginScene", "uiManager = %s", tostring(self._uiManager))
+
+	if self._uiManager then
+		Logger.Debug("LoginScene", "Calling uiManager:Open('LoginPanel')...")
+		local ok, err = pcall(function()
+			self._uiManager:Open("LoginPanel")
+		end)
+		if not ok then
+			Logger.Error("LoginScene", "uiManager:Open FAILED: %s", tostring(err))
+		else
+			Logger.Debug("LoginScene", "LoginPanel opened via UIManager")
+		end
+	else
+		Logger.Warn("LoginScene", "WARNING: UIManager not available")
+	end
 end
 
--- =============================================================================
--- 登录 UI 初始化
--- =============================================================================
+function LoginScene:OnLeave()
+	Logger.Info("LoginScene", "OnLeave: cleaning up...")
+	self._active = false
+	self._generation = (self._generation or 0) + 1
 
-function LoginScene:_initLoginUI()
-    -- 打开登录面板 Prefab（类似 LoadingPanel 方式，通过 UIManager 加载）
-    if self._uiManager then
-        self._uiManager:Open("LoginPanel")
-        print("[LoginScene] LoginPanel opened")
-    else
-        print("[LoginScene] Login UI initialized (placeholder)")
-    end
+	self:_unregisterEvents()
+
+	if self._uiManager then
+		self._uiManager:Close("LoginPanel", "SceneLeave")
+	end
+
+	self._state = LoginState.Idle
+	self._uiManager = nil
+	self._eventsRegistered = false
 end
 
--- =============================================================================
--- 登录流程（状态机驱动）
--- =============================================================================
+function LoginScene:_registerEvents()
+	-- 幂等保护：OnComplete 可能被调用多次，重复注册会让监听器无限累积
+	if self._eventsRegistered then return end
+	self._eventsRegistered = true
 
-function LoginScene:_startLoginFlow()
-    print("[LoginScene] Starting login flow...")
+	local FW = require "Framework.Framework"
+	local eventMgr = FW.Event()
 
-    -- 生产项目中，这里会连接服务器、认证、选择服务器等
-    -- 当前为简化实现：直接模拟登录成功，进入主城
+	-- 统一走 BaseScene:RegisterEvent（自动以 self 为 target，便于基类注销）
+	local function listen(event, handler)
+		self:RegisterEvent(eventMgr, event, handler)
+	end
 
-    self._state = LoginState.Connecting
-    print("[LoginScene] State: Connecting...")
-
-    -- 模拟网络连接延迟
-    local TimerManager = require "Framework.Core.TimerManager"
-    TimerManager:GetInstance():AddDelay(500, function()
-        self:_onConnectSuccess()
-    end)
+	listen("LoginPanel_OnLogin",        LoginScene._onLogin)
+	listen("LoginPanel_OnServerSelect", LoginScene._onServerSelect)
+	listen("LoginPanel_OnShowTerms",    LoginScene._onShowTerms)
+	listen("LoginPanel_OnShowPrivacy",  LoginScene._onShowPrivacy)
 end
 
-function LoginScene:_onConnectSuccess()
-    self._state = LoginState.Authenticating
-    print("[LoginScene] State: Authenticating...")
-
-    local TimerManager = require "Framework.Core.TimerManager"
-    TimerManager:GetInstance():AddDelay(300, function()
-        self:_onAuthSuccess()
-    end)
+function LoginScene:_unregisterEvents()
+	local FW = require "Framework.Framework"
+	local eventMgr = FW.Event()
+	self:UnregisterAllEvents(eventMgr)
 end
 
-function LoginScene:_onAuthSuccess()
-    self._state = LoginState.SelectingServer
-    print("[LoginScene] State: Selecting server...")
+function LoginScene:_onLogin(serverId, serverName)
+	if not self._active or self._state ~= LoginState.Idle then
+		Logger.Warn("LoginScene", "Login already in progress, ignored")
+		return
+	end
 
-    local TimerManager = require "Framework.Core.TimerManager"
-    TimerManager:GetInstance():AddDelay(200, function()
-        self:_onEnterGame()
-    end)
+	Logger.Info("LoginScene", "Login start: server=%s(%d)", serverName or "unknown", serverId or 0)
+	local online = require "Game.Online.OnlineSession"
+	if not online.IsSelected() then
+		self:_onEnterGame()
+		return
+	end
+	if not online.IsSupported() or online.IsBusy() then
+		self:_loginFailed("online_unavailable")
+		return
+	end
+	self._state = LoginState.Authenticating
+	self:_publishStatus("connecting")
+	local generation = self._generation
+	local completed = false
+	local function onLogin(ok, reason)
+		if completed then return end
+		completed = true
+		if not self._active or generation ~= self._generation then return end
+		if ok and online.IsReady() then
+			self:_onEnterGame()
+		else
+			self:_loginFailed(reason or "online_not_ready")
+		end
+	end
+	local ok, err = pcall(online.Login, online.GetAccountName(), onLogin)
+	if not ok then onLogin(false, tostring(err)) end
+end
+
+function LoginScene:_onServerSelect()
+	if not self._active or self._state ~= LoginState.Idle then return end
+	local online = require "Game.Online.OnlineSession"
+	local ok, reason
+	if online.IsSelected() then
+		ok, reason = online.SelectOffline()
+	elseif online.IsSupported() then
+		ok, reason = online.SelectOnline()
+	else
+		self:_publishStatus("idle", "online_unsupported")
+		return
+	end
+	self:_publishStatus(ok and "idle" or "failed", reason)
+end
+
+function LoginScene:_publishStatus(state, reason)
+	if not self._active then return end
+	local online = require "Game.Online.OnlineSession"
+	require("Framework.Framework").Event():Broadcast("LoginPanel_OnStatus", {
+		state = state, reason = reason,
+		serverId = online.IsSelected() and 2 or 1,
+		serverName = online.IsSelected() and "本地联调" or "离线练习",
+	})
+end
+
+function LoginScene:_loginFailed(reason)
+	self._state = LoginState.Idle
+	Logger.Warn("LoginScene", "Login failed: %s", tostring(reason))
+	self:_publishStatus("failed", reason)
+end
+
+function LoginScene:_onShowTerms()
+	Logger.Debug("LoginScene", "Terms of Service requested")
+	Logger.Warn("LoginScene", "Terms UI not yet implemented (placeholder)")
+end
+
+function LoginScene:_onShowPrivacy()
+	Logger.Debug("LoginScene", "Privacy Policy requested")
+	Logger.Warn("LoginScene", "Privacy UI not yet implemented (placeholder)")
 end
 
 function LoginScene:_onEnterGame()
-    self._state = LoginState.Entering
-    print("[LoginScene] State: Entering game...")
+	self._state = LoginState.Entering
+	self:_publishStatus("entering")
+	local generation = self._generation
+	Logger.Debug("LoginScene", "Entering game world...")
 
-    -- 登录完成，切换到主城场景
-    local GameMain = require "Game.GameMain"
-    GameMain.SwitchScene("Home", function(success)
-        if success then
-            self._state = LoginState.Done
-            print("[LoginScene] Successfully entered Home scene")
-        else
-            print("[LoginScene] Failed to enter Home scene")
-            self._state = LoginState.Idle
-        end
-    end)
+	local GameMain = require "Game.GameMain"
+	local ok, err = pcall(GameMain.SwitchScene, "Home", function(success, reason)
+		if not self._active or generation ~= self._generation then return end
+		if success then
+			self._state = LoginState.Done
+			Logger.Info("LoginScene", "Successfully entered Home scene")
+		else
+			self:_loginFailed(reason or "scene_load_failed")
+		end
+	end)
+	if not ok and self._active and generation == self._generation then self:_loginFailed(tostring(err)) end
 end
 
--- =============================================================================
--- 公共 API
--- =============================================================================
-
 function LoginScene:GetState()
-    return self._state
+	return self._state
 end
 
 function LoginScene:IsLoginDone()
-    return self._state == LoginState.Done
+	return self._state == LoginState.Done
 end
 
 return LoginScene
