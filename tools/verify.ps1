@@ -41,10 +41,18 @@ function Quote-Arg([string]$s) {
 }
 
 # Run a native tool without PowerShell stderr wrapping; returns exit code, writes stdout+stderr to $OutFile.
+# .bat/.cmd cannot be started with UseShellExecute=false; cmd /c call keeps the wrapper exit code
+# (GitHub Actions + LuaRocks installs luacheck as a .bat).
 function Invoke-Tool([string]$Exe, [string[]]$ArgList, [string]$OutFile, [hashtable]$Env = @{}) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $Exe
-    $psi.Arguments = (($ArgList | ForEach-Object { Quote-Arg $_ }) -join " ")
+    $argStr = (($ArgList | ForEach-Object { Quote-Arg $_ }) -join " ")
+    if ($Exe -match '\.(bat|cmd)$') {
+        $psi.FileName = $env:ComSpec
+        $psi.Arguments = "/c call " + (Quote-Arg $Exe) + $(if ($argStr) { " " + $argStr } else { "" })
+    } else {
+        $psi.FileName = $Exe
+        $psi.Arguments = $argStr
+    }
     $psi.UseShellExecute = $false
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
@@ -101,6 +109,11 @@ else {
     $code = Invoke-Tool $luacheck.Source $lcArgs $f
     $n = Count-Match $f '\(\w\d+\)'
     Report ($(if ($code -eq 0) { "PASS" } else { "FAIL" })) "L1-luacheck" $n (Rel $f)
+    if ($code -ne 0 -and (Test-Path -LiteralPath $f)) {
+        $txt = [IO.File]::ReadAllText($f)
+        if ($txt.Length -eq 0) { Write-Host ("L1-luacheck produced no output (exit=" + $code + ")") }
+        else { Write-Host $txt.TrimEnd() }
+    }
 }
 
 if (-not $python) { Report "FAIL" "python" "tool-missing" "-" }
