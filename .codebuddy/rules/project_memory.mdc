@@ -1,0 +1,54 @@
+---
+description: 项目架构关键记忆 — 启动流程、UI注册、场景切换的核心规则
+alwaysApply: true
+enabled: true
+updatedAt: 2026-08-23T00:00:00.000Z
+provider: 
+---
+
+# 项目架构关键记忆
+
+## 启动流程
+- C# 入口: `GameLaunch.LaunchSequence()` → InitLogger → InitFileSystem → InitResources → InitLua → InitModules → StartGame → Complete
+- `InitModules` 阶段通过 `XLuaManager.SafeDoString` 创建 `GameMain` 并调用 `GameMain.Init()`
+- `StartGame` 阶段调用 `XLuaManager.StartGame()` → 查找 `GameMain.StartGame()` → 必须在 Lua 侧实现此函数来跳转第一个业务场景
+
+## UI 窗口注册规则（重要）
+- 所有 UI 窗口必须在 `GameMain.Init()` 中通过 `_registerUIWindows()` 注册到 `UIManager`
+- `_registerUIWindows` 是模块私有 `local function`，仅在文件结尾的公共接口导出块中不导出
+- 新增 UI 窗口时，必须在 `_registerUIWindows()` 中添加对应的注册调用，否则 `UIManager:Open()` 会失败
+
+## GameMain.lua 代码规范
+- 所有函数定义为 `local function`，真正私有，模块外部不可见
+- 文件结尾通过 `GameMain.XXX = XXX` 显式导出公共接口
+- 私有工具函数（如 `_registerUIWindows`）不导出，仅模块内部调用
+- `local function` 定义顺序严格遵守"被调用者在前、调用者在后"，不允许依赖 Lua 声明提升
+- 示例导出块：
+  ```
+  GameMain.Init = Init
+  GameMain.StartGame = StartGame
+  ...
+  return GameMain
+  ```
+
+## Lua 模块编码铁律
+- `local function` 必须先定义后使用，调用者必须在被调用者下方（源码阅读顺序清晰）
+- `function Module.Init(self)` 需要显式声明 `self` 参数，因为 Lua 调用 `Module.Init()` 语法糖展开为 `Module.Init(Module)`
+- 私有函数之间直接调用（如 `_registerUIWindows(uiManager)`），不使用 `self:` 模式
+- 模块内部不通过 `GameMain.XXX()` 调用自己的函数，直接用 `local function` 名调用
+
+## 场景切换
+- 场景配置在 `Game.Scene.SceneConfig` 中定义
+- `SceneLoader:SwitchScene()` 异步加载 Unity 场景 → 完成后自动调用场景 Lua 脚本的 `OnSceneEnter()`
+- 场景 Lua 脚本路径由 `SceneConfig.LuaScript` 指定（如 `Game.Scene.LoginScene`）
+
+## 框架核心 API
+- `UpdateManager`: `AddUpdate(callback, target)` 返回 id，`RemoveUpdate(id)` 按 id 移除，`RemoveUpdateByTarget(target)` 批量移除
+- `TimerManager`: `AddDelay(ms, callback)` 单次延迟，`AddLoop(ms, callback, repeatCount)` 循环，`Remove(id)` 移除
+- `CoroutineManager` 不存在，不要使用。异步等待用 `UpdateManager` 轮询
+
+## 危险区域
+- 不要在 `SceneLoader` 中使用 `CoroutineManager`（模块不存在）
+- 不要在 `TimerManager` 上调用 `AddInterval`（不存在，应用 `AddLoop`）
+- 新增 Lua 模块后必须在 `GameMain.Init()` 中注册，不要假设其他地方会自动注册
+- **XLua 中访问 Unity API 必须用 `CS.UnityEngine`，不能用 `require "UnityEngine"`**（XLua 不走 Lua 模块加载器）

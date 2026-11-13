@@ -1,0 +1,79 @@
+---
+description: 修改 Unity 资产（prefab/scene/ScriptableObject 等 YAML 资产）必须通过 unityMCP 在编辑器内改动，禁止手工编辑 YAML 文本，避免文件损坏
+alwaysApply: true
+enabled: true
+updatedAt: 2026-09-23T21:00:00.000Z
+provider:
+---
+
+# 修改 Unity 资源必须通过 MCP（unityMCP），禁止手工改 YAML
+
+## 强制规则
+
+涉及 `*.prefab` / `*.unity` / `*.asset` 等 Unity 序列化资产的任何改动（增删组件、改字段、删缺失脚本、改层级等），**一律使用 unityMCP 工具在 Unity 编辑器内完成，不得用文本编辑器 / 正则 / 脚本直接读写其 YAML 内容**。
+
+### 为什么（本次踩坑）
+手工分块 / 正则改写 prefab YAML 极易出错，曾导致：
+- 丢失文件头 `%YAML` / `%TAG`（报 `File may be corrupted or was serialized with a newer version of Unity`）；
+- 切分块时误删/错位，造成 `Expected closing '}'` 与 "Recovery GameObject for RectTransform/CanvasRenderer…"（组件变孤儿、Prefab 多根、无法打开）。
+Unity 自带 YAML 解析器很挑剔，非编辑器序列化的文件几乎必坏。
+
+## 正确做法
+
+### 1. 改前先备份
+复制一份原资产为 `原名.bak`（如 `LoginPanel.prefab.bak_migrate`），出错可秒回退。备份不会被 Unity 当作资产（扩展名非 `.prefab`）。
+
+### 2. 删除“缺失脚本”（Missing Script）组件
+用 `execute_code` 在编辑器内运行（注意 `execute_code` 是方法体，`using` 指令不能写在方法体内，用全限定名 `UnityEngine.X` / `UnityEditor.X`）：
+
+```csharp
+string path = "Assets/Game/Resources/UI/Login/LoginPanel.prefab";
+UnityEngine.GameObject go = UnityEditor.PrefabUtility.LoadPrefabContents(path);
+int removed = 0;
+foreach (UnityEngine.Transform t in go.GetComponentsInChildren<UnityEngine.Transform>(true)) {
+    // 必须用官方 API；直接 DeleteArrayElementAtIndex 删 m_Component 里的 null 元素往往“删不掉”（数组元素卡住）
+    removed += UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
+}
+UnityEditor.PrefabUtility.SaveAsPrefabAsset(go, path);
+UnityEditor.PrefabUtility.UnloadPrefabContents(go);
+UnityEditor.AssetDatabase.SaveAssets();
+return "removed: " + removed;
+```
+
+### 3. 其它组件 / 节点改动
+- 组件增删改：`manage_components`（`action: add|remove|set_property`，`target` 用 instanceID 或路径）。
+- prefab 内容改：`manage_prefabs`（`open_prefab_stage` → `modify_contents` / `manage_components` → `save_prefab_stage` → `close_prefab_stage`）。
+- 节点增删改：`manage_gameobject`。
+
+### 4. 改完必须验证（用文件级真值，避免误报）
+**不要**用 `GetComponents<Component>()` 的 null 计数来统计缺失组件——Unity 会直接跳过缺失脚本，`GetComponents` 永远返回 0 个 null，测不出缺失。
+**不要**在 `LoadPrefabContents` 上下文里用 `m_Component` 的 `objectReferenceValue == null` 判断缺失——该上下文下连有效组件也会返回 null，会误报成百上千个“缺失”。
+
+正确做法：直接读文件，统计 `m_Script` 的 `guid` 是否能被 `AssetDatabase.GUIDToAssetPath` 解析（解析不到即真缺失）；同时用正则查 `^--- !u!-?\d+ &(-?\d+)` 是否出现重复 fileID。
+
+```csharp
+string abs = "c:/Unity_1/My project/Assets/Game/Resources/UI/Login/LoginPanel.prefab";
+string[] lines = System.IO.File.ReadAllLines(abs);
+int missing = 0;
+foreach (string line in lines) {
+    int i = line.IndexOf("m_Script:"); if (i < 0) continue;
+    int g = line.IndexOf("guid:", i); if (g < 0) continue;
+    int q1 = line.IndexOf('"', g); int q2 = line.IndexOf('"', q1 + 1);
+    string guid = line.Substring(q1 + 1, q2 - q1 - 1);
+    if (string.IsNullOrEmpty(UnityEditor.AssetDatabase.GUIDToAssetPath(guid))) missing++;
+}
+// 重复 fileID 检查
+System.Text.RegularExpressions.Regex re = new System.Text.RegularExpressions.Regex(@"^--- !u!-?\d+ &(-?\d+)", System.Text.RegularExpressions.RegexOptions.Multiline);
+var seen = new System.Collections.Generic.HashSet<string>();
+var dup = new System.Collections.Generic.HashSet<string>();
+foreach (System.Text.RegularExpressions.Match m in re.Matches(System.IO.File.ReadAllText(abs))) { string id = m.Groups[1].Value; if (!seen.Add(id)) dup.Add(id); }
+return "missing=" + missing + " dupFileIDs=" + dup.Count; // 期望两者都为 0
+```
+
+### 5. UI 绑定列表（UICompList）复检
+移除组件后，检查 `UIComponentBinder` 的 `UICompList` 各 `Comp` 引用是否仍解析成功（`objectReferenceValue == null` 即悬空）。注意：`Comp: {fileID: 0}` 是合法的“无引用”，不算悬空（如 atlas 绑定清空）。
+
+## 适用工具速查
+- `execute_code`：跑任意 C#（编辑器内，安全沙箱开启）；删除缺失脚本、批量校验首选。
+- `manage_prefabs` / `manage_components` / `manage_gameobject`：结构化增删改。
+- `manage_asset`（action=search, filterType=Prefab）：列举 / 查找资产。

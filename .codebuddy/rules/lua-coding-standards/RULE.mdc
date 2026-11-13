@@ -1,0 +1,44 @@
+---
+description: My project Lua 语言级编码规范（P0 基线）：强制 local、统一命名/缩进/require 顺序、禁魔法数字与全局污染、文件头模板、统一日志分级。所有 Lua 文件必须遵守，与 ui-framework-conventions 规则互补。
+alwaysApply: true
+enabled: true
+updatedAt: 2026-09-23T18:30:00.000Z
+provider:
+---
+
+# Lua 编码规范（P0 基线）
+
+> 本规范是语言级底线；UI 专用约定（零 Find / `__uiComp` / AutoBind / 命名后缀）见 `ui-framework-conventions` 规则。两者冲突时以具体领域规则为准，但本规范的「禁止项」永远优先。
+
+---
+
+## 1. 变量与作用域
+- 所有变量必须 `local` 声明，**禁止意外创建全局变量**。允许的全局仅：引擎注入的 `CS` / `typeof` / `UnityEngineUI` 等，以及框架约定的单例访问器（如 `XXXManager:GetInstance()`）。
+- 禁止随意写 `_G.xxx`；如需暴露全局单例，走框架既有 `GetInstance()` 模式，不在业务文件里新建全局。
+
+## 2. 命名风格（本项目统一 camelCase）
+- 方法 / 函数 / 局部变量：`camelCase`（如 `SetOnClick`、`svrText`、`isInit`）。
+- Unity 底层组件字段：固定 `unity_xxx` 前缀 + snake_case（如 `self.unity_uibutton`），用于辨识底层 userdata，区别于业务逻辑字段。
+- 常量：全大写 + 下划线（如 `MAX_RETRY_COUNT`）；**禁止魔法数字**，集中定义。
+- 私有 / 内部字段：前缀 `__`（如 `self.__onclick` 缓存的 listener 闭包）。
+
+## 3. 文件结构
+- 文件头注释（可简写）：`-- Xxx.lua - 一句话职责说明`；复杂模块补 `-- Module / Target / 描述` 三段。
+- `require` 顺序：引擎 / 框架基类 → 依赖组件 → 工具，每组内按字母序，组间空行。
+- 一个文件一个主类（BaseClass 定义）；禁止在组件文件里塞无关全局函数。
+
+## 4. 缩进与格式
+- 缩进使用 tab（与 `Assets/Game/LuaScripts/.editorconfig` 一致，`indent_style = tab`，显示宽度 4）。禁止用空格缩进；行宽建议 ≤ 120，超长链式 / 多参数换行（呼应 UI 规则第 10 节「禁止缩成一行」）。
+- 函数体不压缩成单行；`if / for / function` 块必须换行书写。
+
+## 5. 日志
+- 使用框架统一日志接口，带级别（DEBUG / INFO / WARN / ERROR）与模块 tag；**禁止散用 `Logger.LogRed` 等无级别写法**。
+- 错误路径必须有可定位信息（文件名 / 字段名），不打印敏感数据（账号、token）。
+
+## 6. 禁止项
+- 禁用 `module()` / `setfenv` 旧式模块写法。
+- 禁止在热路径（Update / 每帧回调）`new` table / closure；闭包缓存复用（见 UI 规则第 2、10 节）。
+- 禁止重复造轮子：写功能前先检索 `Framework.UI.*` / `UIUtil` / `BaseClass` / 业务 Manager，复用既有能力。
+
+## 7. 多语言
+- UI 展示文本禁止硬编码（如 `SetText("确认")`）；统一走项目 i18n / 文案表接口（如 `Lang.Get("key")`）。无文案表的文本先抽为模块级常量，再接入 i18n。

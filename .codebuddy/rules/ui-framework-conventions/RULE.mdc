@@ -1,0 +1,159 @@
+---
+description: My project UI 框架对齐 ShaoNvClient_H02 的强制规范（零 Find、组件化、__uiComp 回退、m_ 命名约定、裁剪业务依赖），修改或新增 UI 组件/业务 View 时必须遵守
+alwaysApply: true
+enabled: true
+updatedAt: 2026-09-23T20:45:00.000Z
+provider:
+---
+
+# My project - UI 框架对齐规范（AI 自用）
+
+> 用途：AI 在本项目修改 / 新增 UI 组件、业务 View 时强制遵守的统一规范。
+> 目标：与 `ShaoNvClient_H02` 的「零 Find + 组件化」UI 框架对齐，但运行于 My project 的 BaseClass(XLua) 体系，并裁剪 H02 的业务依赖。
+
+---
+
+## 0. 一句话原则
+**新增 / 修改 UI 组件，必须零 Find 优先、组件化、`__uiComp` 回退、监听自清理；任何 C# 缩写后缀以 `UIComponentBinder.TypeAbbrMap` 为准。**
+
+---
+
+## 1. 体系与目录
+- 语言：Lua + XLua。`CS` / `typeof` 是运行期全局（EmmyLua 报 `undefined-global` 误报，忽略）。
+- 基类：`Framework.UI.Utils.BaseClass`（不是 H02 的 `Class` 旧体系）。
+- 组件基类：`Framework.UI.Base.UIBaseComponent`（**默认**）；容器才用 `Framework.UI.Base.UIBaseContainer`。
+- 组件目录：`Assets/Game/LuaScripts/Framework/UI/Component/*.lua`
+- 业务 View 继承：`Framework.UI.Core.UIView`（→ `UIBaseContainer`）。
+- 绑定器 C#：`Assets/Game/Scripts/UI/UIComponentBinder.cs`。
+
+---
+
+## 2. 组件对齐硬规范（必须）
+1. `OnCreate` 统一模板：
+   ```lua
+   function Xxx:OnCreate()
+       base.OnCreate(self)
+       self.unity_xxx = self.__uiComp or UIUtil.FindXxx(self.transform)
+   end
+   ```
+   - 收到 `userdata`(__uiComp) 即零 Find；为 nil 时回退 `Find`（兼容未绑定的老 prefab）。
+2. 继承 `UIBaseComponent`；**不要**为普通组件继承 `UIBaseContainer`（H02 的 UIToggle/UIButton 是容器，My project 一律用组件，内部懒找子 Text）。
+3. 监听缓存：用 `self.__onxxx` 保存 listener 闭包；`SetOnXxx` 先 `RemoveListener` 再 `AddListener`（幂等）；`OnDestroy` 必须 `RemoveListener` 并置 `nil`，且置 `self.unity_xxx = nil`，最后 `base.OnDestroy(self)`。
+4. 组件销毁由 `UIBaseContainer` 统一管理，不要在 View 里手删子组件。
+
+---
+
+## 3. 命名约定（C# TypeAbbrMap 为准）
+节点命名 `m_xxx_<Abbr>`，`<Abbr>` 由 Unity 组件类型决定。**易错项已标红**：
+
+| Unity 组件 | 后缀 | Lua 类 | 是否实现 |
+|---|---|---|---|
+| Button | `_Btn` | UIButton | ✅ |
+| Text / TMP | `_Txt` | UIText | ✅ |
+| Image | `_Img` | UIImage | ✅ |
+| RawImage | `_RawImg` | UIRawImage | ✅ |
+| Toggle | `_Tog` | UIToggle | ✅ |
+| Slider | `_Sld` | UISlider | ✅ |
+| ScrollRect | `_Srt` | UIScrollRect | ✅ |
+| **Scrollbar** | **`_Slb`**（非 Sbr） | UIScrollbar | ✅ |
+| **InputField** | **`_Ipt`**（非 Input） | UIInputField | ✅ |
+| 无组件纯节点 | `_Transform` | UINode | ✅ |
+| Dropdown | `_Dpd` | （无） | ❌ 可选 |
+| Animation | `_Ani` | （无） | ❌ 可选 |
+| Animator | `_Anr` | （无） | ❌ 可选 |
+| UIComponentBinder | `_Cmp` | 嵌套 binder，不建组件 | — |
+
+前缀：`m_` 普通 / `mi_` 图片按钮 / `c_` `ci_` Cell/Item。特殊节点 `SubRoot`/`CurrencyParent`/`CloseBtn`/`ReturnBtn`/`MaskBtn` 有内置绑定（后缀用 `Type.Name` 如 `_Button`，映射表不识别，自动跳过）。
+
+---
+
+## 4. 新增一个组件类的三步（缺一不可）
+1. `UIUtil.lua` 加 `FindXxx`（走 `_searchComponent(transform, typeof(UnityEngineUI.Xxx))`），并在 `return` 表导出。
+2. `Component/Xxx.lua`：继承 `UIBaseComponent`，`OnCreate` 用 `__uiComp or FindXxx`，带监听清理。
+3. `UIBaseContainer._ABBR_TO_CLASS` 加 `Abbr = "Framework.UI.Component.Xxx"` —— **key 必须与 C# TypeAbbrMap 缩写逐字一致**（见第 3 节易错项）。
+   - `AutoBind` 用 `compName:match("_(%w+)$")` 取后缀查表；`pcall(require)` 失败会跳过该节点（不崩），但会漏建，务必保证类文件存在。
+
+---
+
+## 5. 裁剪规范（对齐 H02 但解耦）
+新增组件时，从 H02 源码取核心 API，**禁止**保留以下 H02 业务依赖：
+- ❌ DOTween 动画（`UISlider` 已裁）
+- ❌ `UnityEngine.UI.Extensions.ScrollRectTweener`（`UIScrollRect` 已裁）
+- ❌ 异步纹理加载 / `UIManager.grayMaterial` 置灰（`UIRawImage` 已裁，仅留 `SetTexture/GetTexture/SetNativeSize`）
+- ❌ `logUIComp(...)` 告警全局（My project 无此函数，回退时静默）
+- ❌ `BindCallback(...)`（用 `function(...) handler(...) end` 封装代替）
+- ❌ Spine / Live2D / Wwise / TMPro 业务包装（除非项目显式引入）
+保留：底层 Unity 组件的字段访问、值变化回调、基础 Set/Get。
+
+---
+
+## 6. 业务 View 写法
+- **推荐（对齐 H02）纯 AutoBind**：`base.OnCreate(self)` 后直接读注入字段
+  `self._loginBtn = self.m_LoginBtn_Btn`。
+- **兼容兜底**：`self._loginBtn = self.m_LoginBtn_Btn or self:AddComponent(UIButton, "ContentRoot/m_LoginBtn")`
+  —— `AddComponent` 内部 `_FindComponentByGO` 按 GameObject+类型查重，零 Find 与路径写法可共存、不重复实例化。
+- **禁止**：业务 View 里手调 `Transform.Find` / `self.transform:Find`。统一走 `UIUtil.FindXxx` 或 `AutoBind`。
+
+---
+
+## 7. 反模式（禁止）
+1. 直接 `Transform.Find` 拿子节点组件。
+2. 组件 `OnCreate` 不写 `__uiComp or Find` 回退（丢失零 Find 能力）。
+3. `OnDestroy` 不清理 `onValueChanged`/`onClick` 监听、不置 `unity_xxx = nil`。
+4. 假设 C# 缩写（`Slb`/`Ipt` 最易错成 `Sbr`/`Input`）。
+5. 引入 H02 的 `Class` 旧体系或上述第 5 节业务依赖。
+6. 在 `_ABBR_TO_CLASS` 加了 key 却忘了建对应 `.lua` 文件（运行期该节点漏建）。
+
+---
+
+## 8. 当前已落地改动（追溯）
+- `UIUtil`：补 `FindToggle/FindSlider/FindScrollRect/FindScrollbar/FindInputField/FindRawImage` 并导出。
+- 组件：`UIToggle`/`UISlider`/`UIScrollRect`/`UIScrollbar`/`UIInputField`/`UIRawImage` 新建；`UIImage`/`UIText` 改 `__uiComp or Find`；`UIButton` 已 `__uiComp or Find`。
+- `UIBaseContainer`：`AutoBind()` + `_ABBR_TO_CLASS`(含 Slb/Ipt) + `AddComponent` 查重 + `BindLuaUIComp`。
+- `LoginView`：纯 AutoBind + 路径兜底写法。
+- 文档：`Framework/UI/Component/ComponentBinding.md`（给业务开发者的使用说明）。
+- 对象池/虚拟列表：`PrefabPool`(GameObject 级对象池) + `UIListView`(虚拟滚动列表，纯 Lua 等效 SuperScroll；My project 无 `UnitySuperScrollView` 插件故未移植其 C# 包装层)。
+
+## 9. 仍未实现（按需）
+`UIDropdown`(_Dpd) / `UIAnimation`(_Ani) / `UIAnimator`(_Anr)。AutoBind 遇到会安全跳过。
+
+---
+
+## 10. 通用编码纪律（适用于本项目所有改动，必须）
+1. **复用优先，禁止重复造轮子**：动手写功能前，先检索项目已有的全局类 / 工具 / 公共模块
+   （如 `UIUtil`、`BaseClass`、`Logger`、各 `Framework.UI.*` 组件与 Utils、业务 Manager 单例等），
+   优先调用现有能力；确有缺口再扩展，绝不在同一仓库内重新实现已有逻辑。
+2. **先理解后动手**：新增 / 修改前先读相关文件、确认现有约定与接口；不确定既有能力是否存在时主动搜索，而非凭记忆重写。
+3. **规范封装，不为快摊平**：逻辑该封装就封装成函数 / 方法，单一职责、命名清晰；
+   不要把多步逻辑硬塞进一个长函数或匿名闭包里「图快」。
+4. **可读性优先，禁止缩成一行**：不要把本应多行的逻辑压成超长单行
+   （如长链式调用、多层 `if` / `and` / `or` 挤在一行、一行内写多个语句等）；
+   保持合理换行与缩进，必要时拆分中间变量，让后续维护者能一眼读懂。
+5. **质量优先于速度**：不因为「赶时间」而跳过封装、跳过复用、跳过注释关键意图；可读性、可维护性高于一次性写完。
+
+---
+
+## 11. 待补强项（对标腾讯级大厂规范 · Roadmap）
+> 本项目当前尚未成文 / 未落地、但大厂客户端项目普遍强制的规范维度。按优先级逐步补为正式规则。
+
+### P0（先补：成本低、收益高，是其它规范前提）
+- **语言级 Lua 规范（已单列 `lua-coding-standards` 规则 2026-09-23）**：
+  - 强制 `local`，禁止全局变量污染；统一命名风格（camelCase 或 snake_case 二选一并全员遵守）；
+  - 统一缩进（4 空格）/ 行宽（建议 ≤ 120）/ `require` 顺序（先引擎后框架再业务）；
+  - 禁用 `module()`；禁止随意写 `_G`；禁止魔法数字（常量集中定义）；
+  - 统一文件头注释模板与函数注释风格。
+- **静态检查门禁**：引入 `luacheck` + 全局白名单 `.luacheckrc`（**已建 2026-09-23**：声明 `CS`/`typeof`/`IsNull`/`Logger` 与 `Unity_*` 类型别名，对齐 `lua-coding-standards` 的 `std=lua5.3` / `max_line_length=120`）；pre-commit / CI 接入待环境具备后配置（当前仅 EmmyLua 编辑器提示）。
+- **统一日志规范**：日志分级 + 模块 tag（**已落地 2026-09-23**：My project 已有 `Framework/UI/Utils/Logger.lua`，提供 `Logger.Debug/Info/Warn/Error(tag, fmt, ...)` 分级接口 + 级别过滤 + 多 Sink；`UIWindow`/`UIManager` 已在用；检索 `LogRed` 等无分级彩色写法为 0 处。约定：新增日志统一走 `Logger.Xxx(tag, fmt)`，禁止 `print`/`LogRed` 等无分级写法，业务层既有 `print` 散用列为后续清理项）。
+
+### P1（关系线上稳定性与扩展成本）
+- **防御性空判断统一**：所有 Unity userdata 访问前必须 `IsNull` 判空（**已落地 2026-09-23**：UIButton / UIImage / UIToggle 裸判空统一为 `IsNull`，其余组件本就用 `IsNull`）。
+- **UI 列表对象池 / 虚拟滚动**：对齐 H02 的 SuperScroll 设计意图（**已落地 2026-09-23**，纯 Lua 等效，不依赖第三方 C# 插件）：`PrefabPool`(GameObject 级对象池，与 `Core/ObjectPool` 的 Lua table 池互补) + `UIListView`(垂直虚拟滚动列表，可视区实例化 + 复用；因 My project 无 `UnitySuperScrollView` 插件，未移植其 C# 包装层)。
+- **多语言 i18n**：UI 文本外提至文案表，禁止硬编码中文（**已全项目落地 2026-09-23**：`Lang.lua` 入口 + LoginView / Loading 模块(LoadingView / LoadingModel / LoadingManager) 全部经 `Lang.Get` 取文案；`Game/UI` 下已无硬编码中文残留，仅剩注释内的示例文案）。
+
+### P2（团队规模化后显价值）
+- **可观测性（最小钩子已落地 2026-09-23）**：`UIManager:Open` → `WindowOpened` 全链路「打开耗时」经 `Logger.Info(winName, "open cost %.1f ms", ...)` 输出（含资源加载异步等待）；`UIManager:Dump` / `LogDump` 已有框架快照。崩溃 / 性能监控 SDK 接入、内存打点为后续（待监控基础设施）。
+- **测试体系（方案已定，待环境）**：框架组件已具备可测性契约（`OnCreate` / `OnDestroy` 对称、监听自清理）；推荐引入 Lua 单测框架（busted / luaunit），在 CI 环境跑 XLua 兼容层，优先覆盖 `ObjectPool` / `PrefabPool` / `UIListView` / `Lang` 等纯逻辑组件；UI 冒烟 / 自动化列为后续。
+- **协作文档（起步已沉淀）**：ADR / CHANGELOG / 模块 owner / Breaking change 声明为后续；本次规范化已沉淀 `UI_FRAMEWORK_STATUS.md` / `RULE.mdc` / `lua-coding-standards` 作为协作文档起点。
+
+### 已具备基线（不重复造，仅记录）
+零 Find + 组件化 + AutoBind；统一 `m_` 命名约定；监听生命周期自清理；复用 / 封装 / 可读性纪律（第 10 节）；依赖裁剪解耦。
