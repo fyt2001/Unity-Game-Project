@@ -32,17 +32,13 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T
 
                         if (_instance == null)
                         {
-                            // 2. 自动创建并挂载到 Boot 节点下
+                            // 2. 自动创建。注意：不要在此把 go 挂到 Boot 下，
+                            //    否则 Awake 里的 DontDestroyOnLoad(go) 作用在“非根节点”上会失效
+                            //    （Unity 警告：DontDestroyOnLoad only works for root GameObjects），
+                            //    单例将随场景卸载被销毁，导致 XLuaManager 的 LuaEnv 丢失，
+                            //    进而 Trigger 登录后切到主界面又被弹回登录页。
                             GameObject go = new GameObject(typeof(T).Name);
                             _instance = go.AddComponent<T>();
-
-                            GameObject parent = GameObject.Find("Boot");
-                            if (parent == null)
-                            {
-                                parent = new GameObject("Boot");
-                                DontDestroyOnLoad(parent);
-                            }
-                            go.transform.SetParent(parent.transform);
                         }
                     }
                 }
@@ -67,14 +63,30 @@ public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoSingleton<T
         if (_instance == null)
         {
             _instance = this as T;
-            DontDestroyOnLoad(gameObject);
-            Init();
         }
         else if (_instance != this)
         {
             // 防止场景中存在多个实例
             Destroy(gameObject);
+            return;
         }
+
+        // 关键修复：先以“根节点”身份标记 DontDestroyOnLoad，确保跨场景存活；
+        // 之后再挂到 Boot 下做组织（此时已标记持久化，不会再触发“非根节点”警告）。
+        DontDestroyOnLoad(gameObject);
+
+        GameObject parent = GameObject.Find("Boot");
+        if (parent == null)
+        {
+            parent = new GameObject("Boot");
+            DontDestroyOnLoad(parent);
+        }
+        if (gameObject.transform.parent != parent.transform)
+        {
+            transform.SetParent(parent.transform);
+        }
+
+        Init();
     }
 
     /// <summary>

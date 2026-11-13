@@ -3,6 +3,7 @@
 // =============================================================================
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -19,13 +20,25 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     private LuaEnv _luaEnv;
     private LuaTable _gameMain;
-    private LuaFunction _updateFunc;
-    private LuaFunction _lateUpdateFunc;
     private Func<string, LuaTable> _requireFunc;
     private bool _disposed;
+    private bool _disposing;
+    private bool _shutdownStarted;
 
     public bool HasGameStarted => _gameMain != null;
-    public LuaLoadMode LoadMode { get; set; } = LuaLoadMode.Editor;
+    private LuaLoadMode _loadMode = LuaLoadMode.Editor;
+    public LuaLoadMode LoadMode
+    {
+        get
+        {
+#if UNITY_EDITOR
+            return _loadMode;
+#else
+            return LuaLoadMode.Device;
+#endif
+        }
+        set { _loadMode = value; }
+    }
     public List<string> SearchPaths { get; set; } = new List<string> { "Game/LuaScripts" };
 
     // =========================================================================
@@ -40,6 +53,10 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     public void OnInit() => InitLuaEnv();  // 兼容历史 Wrap 代码
 
+    /// <summary>
+    /// 本地文件同步初始化；Android APK / WebGL URL 使用 <see cref="InitLuaEnvCoroutine"/>。
+    /// 保留此签名以兼容 XLua 生成的 Wrap 与历史调用方。
+    /// </summary>
     public void InitLuaEnv(Action onComplete = null)
     {
         if (_luaEnv != null) { onComplete?.Invoke(); return; }
@@ -47,8 +64,48 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         DebugLogger.Info("[XLuaManager] Initializing LuaEnv...");
         TimeProfiler.Start("InitLuaEnv");
 
+        // 真机：XLua 的 loader 是【同步】的，不能"用到才加载"，
+        // 必须先把整个 Lua AssetBundle 加载好，之后 CustomLoader 才能从 bundle 同步取字节。
+        if (LoadMode == LuaLoadMode.Device)
+        {
+            if (!LuaBundleLoader.LoadSync())
+                throw new InvalidOperationException("Lua AssetBundle is not ready; use the async initialization path.");
+        }
+
+        SetupLuaEnv();
+        onComplete?.Invoke();
+    }
+
+    /// <summary>
+    /// 异步初始化（推荐，全平台通用）。
+    /// URL 资源异步拉取，必须等 Lua AB 就绪后再创建 LuaEnv。
+    /// </summary>
+    public IEnumerator InitLuaEnvCoroutine(Action onComplete = null)
+    {
+        if (_luaEnv != null) { onComplete?.Invoke(); yield break; }
+
+        DebugLogger.Info("[XLuaManager] Initializing LuaEnv (async)...");
+        TimeProfiler.Start("InitLuaEnv");
+
+        if (LoadMode == LuaLoadMode.Device)
+        {
+            yield return LuaBundleLoader.LoadAsync();
+            if (!LuaBundleLoader.IsReady)
+                throw new InvalidOperationException("Lua AssetBundle failed to load; LuaEnv initialization was stopped.");
+        }
+
+        if (_luaEnv == null) SetupLuaEnv();
+        onComplete?.Invoke();
+    }
+
+    /// <summary>Lua AB 就绪之后的公共初始化流程。</summary>
+    private void SetupLuaEnv()
+    {
+        if (_disposed) throw new ObjectDisposedException(nameof(XLuaManager));
         _luaEnv = new LuaEnv();
         _luaEnv.AddLoader(CustomLoader);
+        if (LoadMode == LuaLoadMode.Device)
+            Game.Security.LuaScriptProtection.ConfigureDeviceEnvironment(_luaEnv);
 
         try
         {
@@ -65,7 +122,6 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
         TimeProfiler.End("InitLuaEnv");
         DebugLogger.Info($"[XLuaManager] LuaEnv ready ({TimeProfiler.Dump()})");
-        onComplete?.Invoke();
     }
 
     /// <summary>注意：GameMain 在 GameLaunch 中由外部 Lua 脚本创建并注入</summary>
@@ -74,15 +130,6 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         _gameMain = gameMain;
         if (_gameMain != null)
             DebugLogger.Info("[XLuaManager] GameMain bound");
-
-        // 获取 Lua 层的 Update 函数，确保场景切换后 Update 循环不中断
-        if (_luaEnv != null)
-        {
-            _updateFunc = _luaEnv.Global.Get<LuaFunction>("__LuaTick");
-            _lateUpdateFunc = _luaEnv.Global.Get<LuaFunction>("__LuaLateTick");
-            if (_updateFunc != null)
-                DebugLogger.Info("[XLuaManager] Lua update tick bound");
-        }
     }
 
     public void StartGame()
@@ -94,15 +141,10 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         {
             try
             {
-                var startFunc = _gameMain.Get<LuaFunction>("StartGame");
-                if (startFunc != null)
+                using (var startFunc = _gameMain.Get<LuaFunction>("StartGame"))
                 {
-                    startFunc.Call();
-                    startFunc.Dispose();
-                }
-                else
-                {
-                    DebugLogger.Warn("[XLuaManager] GameMain.StartGame not found");
+                    if (startFunc != null) startFunc.Call();
+                    else DebugLogger.Warn("[XLuaManager] GameMain.StartGame not found");
                 }
             }
             catch (System.Exception e)
@@ -122,15 +164,7 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         try
         {
             _luaEnv.Tick();
-            _updateFunc?.Call(Time.deltaTime);
         }
-        catch (Exception e) { DebugLogger.Exception(e); }
-    }
-
-    private void LateUpdate()
-    {
-        if (_luaEnv == null || _disposed) return;
-        try { _lateUpdateFunc?.Call(Time.deltaTime); }
         catch (Exception e) { DebugLogger.Exception(e); }
     }
 
@@ -145,8 +179,13 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     private void OnApplicationQuit()
     {
-        TryCall("OnApplicationQuit");
         Dispose();
+    }
+
+    protected override void OnDestroy()
+    {
+        Dispose();
+        base.OnDestroy();
     }
 
     private void OnApplicationFocus(bool isFocus)
@@ -161,8 +200,7 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         if (_gameMain == null || _disposed) return;
         try
         {
-            var func = _gameMain.Get<LuaFunction>(method);
-            func?.Call(args);
+            using (var func = _gameMain.Get<LuaFunction>(method)) func?.Call(args);
         }
         catch (Exception e) { DebugLogger.Warn($"[XLuaManager] TryCall({method}): {e.Message}"); }
     }
@@ -173,29 +211,45 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     public override void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
-
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-
-        // 释放 LuaFunction 引用
-        _updateFunc?.Dispose(); _updateFunc = null;
-        _lateUpdateFunc?.Dispose(); _lateUpdateFunc = null;
-        _requireFunc = null;
-        _gameMain?.Dispose(); _gameMain = null;
-
-        System.GC.Collect();
-        System.GC.WaitForPendingFinalizers();
-
-        if (_luaEnv != null)
+        if (_disposing || (_disposed && _luaEnv == null)) return;
+        _disposing = true;
+        try
         {
-            try { _luaEnv.Dispose(); }
-            catch (Exception e) { DebugLogger.Warn($"[XLuaManager] Dispose: {e.Message}"); }
+            if (!_shutdownStarted)
+            {
+                _shutdownStarted = true;
+                // Unity does not guarantee GameLaunch/XLuaManager quit ordering.
+                if (_luaEnv != null)
+                {
+                    GameLaunch.Instance?.ReleaseLuaTicks();
+                    foreach (var scene in FindObjectsOfType<HomeSceneBootstrapper>(true)) scene.ReleaseLuaBindings();
+                    FindObjectOfType<WebDownLoadManager>()?.ReleaseLuaCallbacks();
+                }
+                TryCall("OnApplicationQuit");
+                // Destroy() is deferred; entity bindings must leave the still-live VM now.
+                if (_luaEnv != null)
+                    foreach (var view in FindObjectsOfType<Game.View.LuaViewBehaviour>(true)) view.ReleaseLuaBindings();
+            }
+            _disposed = true;
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            _requireFunc = null;
+            _gameMain?.Dispose(); _gameMain = null;
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+            // Keep the environment on failure so a rejected Dispose is observable/retryable.
+            _luaEnv?.Dispose();
             _luaEnv = null;
+            DebugLogger.Info("[XLuaManager] Disposed");
+            base.Dispose();
         }
-
-        DebugLogger.Info("[XLuaManager] Disposed");
-        base.Dispose();
+        catch (Exception e)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Game.Security.OnlinePlayerProbe.ReportCallbackOrigins(_luaEnv);
+#endif
+            DebugLogger.Exception(e);
+        }
+        finally { _disposing = false; }
     }
 
     // =========================================================================
@@ -204,12 +258,18 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     public byte[] CustomLoader(ref string filepath)
     {
+        string requirePath = filepath;
         filepath = filepath.Replace(".", "/") + ".lua";
-        return LoadMode == LuaLoadMode.Editor ? LoadFromFileSystem(filepath) : LoadFromBundle(filepath);
+
+        if (LoadMode == LuaLoadMode.Device)
+            return LuaBundleLoader.TryGetScript(requirePath);
+
+        return LoadFromFileSystem(filepath);
     }
 
     private byte[] LoadFromFileSystem(string filepath)
     {
+#if UNITY_EDITOR
         foreach (string sp in SearchPaths)
         {
             string p = Path.Combine(Application.dataPath, sp, filepath);
@@ -223,12 +283,9 @@ public class XLuaManager : MonoSingleton<XLuaManager>
         // 只在 Debug 模式下输出警告，避免日志刷屏
         // DebugLogger.Warn($"[XLuaManager] Not found: {filepath}");
         return null;
-    }
-
-    private byte[] LoadFromBundle(string filepath)
-    {
-        var ta = Resources.Load<TextAsset>(filepath.Replace(".lua", ""));
-        return ta != null ? ta.bytes : null;
+#else
+        throw new InvalidOperationException("Filesystem Lua loading is editor-only.");
+#endif
     }
 
     // =========================================================================
@@ -256,8 +313,8 @@ public class XLuaManager : MonoSingleton<XLuaManager>
 
     public LuaFunction GetGlobalFunction(string module, string func)
     {
-        var t = _luaEnv?.Global.GetInPath<LuaTable>(module);
-        return t?.GetInPath<LuaFunction>(func);
+        using (var t = _luaEnv?.Global.GetInPath<LuaTable>(module))
+            return t?.GetInPath<LuaFunction>(func);
     }
 
     public T GetGlobalValue<T>(string key)
